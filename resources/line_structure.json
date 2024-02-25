@@ -1,0 +1,257 @@
+{
+    "type": "Line",
+    "ue_voltage": [
+        400.0,
+        400.0,
+        400.0
+    ],
+    "voltage_drop": [
+        10.0,
+        10.0,
+        10.0
+    ],
+    "resistivity": [
+        0.125,
+        0.125,
+        0.125
+    ],
+    "reactance": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "is_main_line": true,
+    "components": [
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Line",
+            "ue_voltage": [
+                400.0,
+                400.0,
+                400.0
+            ],
+            "resistivity": [
+                0.125,
+                0.125,
+                0.125
+            ],
+            "reactance": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "is_main_line": false,
+            "components": [
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                },
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                },
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                },
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                },
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                },
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                },
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                },
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                },
+                {
+                    "type": "Motor",
+                    "active_power": 20000,
+                    "distance": 100,
+                    "voltage": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        },
+        {
+            "type": "Motor",
+            "active_power": 20000,
+            "distance": 100,
+            "voltage": [
+                400.0,
+                400.0,
+                400.0
+            ]
+        }
+    ]
+}
