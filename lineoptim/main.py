@@ -65,9 +65,9 @@ class LineOptimizer(nn.Module):
         ln = Line(**net, level=level)
         for comp in net["components"]:
             if comp["type"] == "Motor":
-                ln.add_load(load=Motor(**comp))
+                ln.add(load=Motor(**comp))
             if comp["type"] == "Line":
-                ln.add_load(load=self.create_line(comp, level=(level + 1)))
+                ln.add(load=self.create_line(comp, level=(level + 1)))
 
         self.lines.append(ln)
 

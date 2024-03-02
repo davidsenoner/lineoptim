@@ -38,6 +38,10 @@ class Line:
     def level(self) -> int:
         return self._level
 
+    @property
+    def loads(self):
+        return self._loads
+
     def get_resistivity(self) -> float | Tensor:
         """
         Cable resistivity (ohm/m)
@@ -55,7 +59,7 @@ class Line:
         """
         return self._length
 
-    def add_load(self, load) -> None:
+    def add(self, load) -> None:
         """
         Add a node to Network
 
