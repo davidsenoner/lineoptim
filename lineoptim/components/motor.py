@@ -32,16 +32,16 @@ class Motor:
     def __str__(self):
         return f'Motor'
 
-    def get_voltage(self):
+    def get_voltage(self) -> float | Tensor:
         return self._voltage
 
-    def set_voltage(self, voltage: float) -> None:
+    def set_voltage(self, voltage: float | torch.Tensor) -> None:
         self._voltage = voltage
 
-    def get_active_power(self) -> float:
+    def get_active_power(self) -> float | torch.Tensor:
         return self._active_power
 
-    def set_active_power(self, power: float) -> None:
+    def set_active_power(self, power: float | torch.Tensor) -> None:
         self._active_power = power
 
     def get_efficiency(self):

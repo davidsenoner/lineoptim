@@ -16,17 +16,16 @@ class LineOptimizer(nn.Module):
         self.ue_voltage = tensor(config["ue_voltage"])  # get main line voltage
 
         self.lines = []
-        self.min_resistivity = tensor(0.1)
 
         # create line instance from config/json
         self.main_line = self.create_line(config)
         self.main_line.compute_partial_voltages()
 
         # start resistance for optimizer
-        start_value = 0.125
+        start_resistivity = 0.125
 
         shape = (self.line_num, self.cores_num)
-        params = torch.full(fill_value=start_value, size=shape, dtype=torch.float)  # resistances to optim
+        params = torch.full(fill_value=start_resistivity, size=shape, dtype=torch.float)  # resistances to optim
 
         # optimisation params
         self.resistivity = nn.Parameter(params, requires_grad=True)
@@ -119,7 +118,6 @@ if __name__ == '__main__':
 
     # print results
     print(f'Predictions: {predictions}')
-
 
     # plot the loss
     plt.plot(losses)

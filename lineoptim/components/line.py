@@ -89,7 +89,7 @@ class Line:
     def get_phase_shift_angle(self) -> float | torch.Tensor:
         return torch.arccos(self._power_factor)
 
-    def set_load_voltage(self, load_idx: int, voltage: float) -> None:
+    def set_load_voltage(self, load_idx: int, voltage: float | torch.Tensor) -> None:
         """
         Update node voltage
 
@@ -99,7 +99,7 @@ class Line:
         """
         self._loads[load_idx].set_voltage(voltage)
 
-    def get_load_voltage(self, load_idx: int) -> float:
+    def get_load_voltage(self, load_idx: int) -> float | torch.Tensor:
         """
         Get node voltage of node_idx
         :param load_idx: ID of Node to return voltage
@@ -107,7 +107,7 @@ class Line:
         """
         return self._loads[load_idx].get_voltage()
 
-    def get_load_current(self, load_idx: int) -> float:
+    def get_load_current(self, load_idx: int) -> float | torch.Tensor:
         """
         Return load current of specified load ID
         :param load_idx: Load ID
@@ -115,7 +115,7 @@ class Line:
         """
         return self._loads[load_idx].get_current()
 
-    def get_voltage(self) -> float:
+    def get_voltage(self) -> float | torch.Tensor:
         """
         Nominal network voltage. Will be used as default node voltage.
         Call compute_partial_voltages() method to compute correct node voltage.
@@ -124,7 +124,7 @@ class Line:
         """
         return self._voltage
 
-    def set_voltage(self, voltage: float) -> None:
+    def set_voltage(self, voltage: float | torch.Tensor) -> None:
         """
         Set nominal Network voltage. Will be used as default node voltage.
         :param voltage: Network voltage [Volt]
@@ -132,7 +132,7 @@ class Line:
         """
         self._voltage = voltage
 
-    def get_current(self):
+    def get_current(self) -> float | torch.Tensor:
         """
         Calculates sum of all load currents
         Note: execute compute_partial_voltages() before calling this method!
@@ -144,7 +144,7 @@ class Line:
     def get_current_at_load(self, idx: int):
         return sum(load.get_current() for load in self._loads[idx:])
 
-    def get_dU_percent(self, load_idx: int = None) -> float:
+    def get_dU_percent(self, load_idx: int = None) -> float | torch.Tensor:
         """
         Get voltage drop (dU) in percent on actual line
         :return: percent voltage drop
@@ -152,11 +152,11 @@ class Line:
         dU = self.get_dUx(load_idx)
         return (dU / self._voltage) * 100
 
-    def get_load_distance(self, idx: int) -> float:
+    def get_load_distance(self, idx: int) -> float | torch.Tensor:
         distance = sum([self._loads[i].get_length() for i in range(idx + 1)])
         return distance
 
-    def get_line_length(self) -> float:
+    def get_line_length(self) -> float | torch.Tensor:
         return self.get_load_distance(self.get_load_count() - 1)
 
     def get_dUx(self, load_idx: int = None) -> float | torch.Tensor:
