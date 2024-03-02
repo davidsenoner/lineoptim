@@ -12,6 +12,7 @@ See resources/line_structure.json for a network structure example.
 
 ## Usage
 ```python
+cd lineoptim
 python main.py
 ```
 
