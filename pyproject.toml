@@ -7,10 +7,7 @@ name = "lineoptim"
 version = "1.0.0"
 description = "A line optimization package."
 authors = [
-    {
-        name = "David Senoner",
-        email = "david.senoner@gmail.com",
-    }
+    {name = "David Senoner", email = "david.senoner@gmail.com"}
 ]
 
 classifiers = [
