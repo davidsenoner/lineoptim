@@ -11,7 +11,7 @@ def calc_nested_currents(loads):
         if not isinstance(load['v_nominal'], torch.Tensor):
             load['v_nominal'] = torch.tensor(load['v_nominal'])
         if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
-            current += (load['active_power'] / load['v_nominal'] * np.sqrt(3) * load['power_factor'])
+            current += load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
         elif len(load['loads']) > 0:
             current += calc_nested_currents(load['loads'])
     return current
@@ -139,10 +139,13 @@ class Line:
         self.loads.append(load)  # add load to line
         self.loads = sorted(self.loads, key=lambda x: x['position'])  # sort loads by position
 
-    def get_current(self):
-        return calc_nested_currents(self.loads)
-
-    def get_node_current(self, idx: int):
+    def get_current(self, idx):
+        """
+        Calculate current at node_id.
+        Note: Current corresponds to the current of selected node_id.
+        :param idx: Node ID of load to calculate. 0=first node, None=last node
+        :return: Current in Ampere
+        """
 
         load = self.loads[idx]
 
@@ -153,6 +156,9 @@ class Line:
 
         else:
             return calc_nested_currents(load['loads'])
+
+    def get_line_current(self, idx=0):
+        return calc_nested_currents(self.loads[idx:])
 
     def get_dUx(self, load_idx: int = None):
         """
@@ -176,7 +182,7 @@ class Line:
 
         if load_idx is not None:
             current_list[-1] += sum(
-                load['active_power'] / load['v_nominal'] * np.sqrt(3) * load['power_factor']
+                load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
                 for load in self.loads[load_idx:]
             )
 
