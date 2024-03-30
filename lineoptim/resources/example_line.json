@@ -1,5 +1,5 @@
 {
-    "name": "Line 1",
+    "name": "Main power line 1",
     "resistivity": [
         0.125,
         0.125,
@@ -20,36 +20,64 @@
         {
             "name": "Load 1",
             "position": 100,
-            "active_power": 2000,
+            "active_power": 20000,
             "v_nominal": [
-                400.0,
-                400.0,
-                400.0
+                397.7576599121094,
+                397.7576599121094,
+                397.7576599121094
             ],
             "power_factor": 0.9,
-            "apparent_power": 2222.222222222222
+            "apparent_power": 22222.222222222223,
+            "idx": 0
         },
         {
             "name": "Load 2",
             "position": 200,
-            "active_power": 2000,
+            "active_power": 20000,
             "v_nominal": [
-                400.0,
-                400.0,
-                400.0
+                395.92730712890625,
+                395.92730712890625,
+                395.92730712890625
             ],
             "power_factor": 0.9,
-            "apparent_power": 2222.222222222222
+            "apparent_power": 22222.222222222223,
+            "idx": 1
         },
         {
-            "name": "Line 1",
+            "name": "Load 3",
+            "position": 300,
+            "active_power": 20000,
+            "v_nominal": [
+                394.5108337402344,
+                394.5108337402344,
+                394.5108337402344
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "idx": 2
+        },
+        {
+            "name": "Load 4",
+            "position": 400,
+            "active_power": 20000,
+            "v_nominal": [
+                393.5096435546875,
+                393.5096435546875,
+                393.5096435546875
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "idx": 3
+        },
+        {
+            "name": "Sub-line 1",
             "position": 500,
             "resistivity": 0,
             "reactance": 0,
             "v_nominal": [
-                400.0,
-                400.0,
-                400.0
+                392.9248352050781,
+                392.9248352050781,
+                392.9248352050781
             ],
             "loads": [
                 {
@@ -62,7 +90,8 @@
                         400.0
                     ],
                     "power_factor": 0.9,
-                    "apparent_power": 2222.222222222222
+                    "apparent_power": 2222.222222222222,
+                    "idx": 0
                 },
                 {
                     "name": "Load 1.2",
@@ -74,12 +103,66 @@
                         400.0
                     ],
                     "power_factor": 0.9,
-                    "apparent_power": 2222.222222222222
+                    "apparent_power": 2222.222222222222,
+                    "idx": 1
+                },
+                {
+                    "name": "Load 1.3",
+                    "position": 200,
+                    "active_power": 2000,
+                    "v_nominal": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ],
+                    "power_factor": 0.9,
+                    "apparent_power": 2222.222222222222,
+                    "idx": 2
+                },
+                {
+                    "name": "Load 1.4",
+                    "position": 250,
+                    "active_power": 2000,
+                    "v_nominal": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ],
+                    "power_factor": 0.9,
+                    "apparent_power": 2222.222222222222,
+                    "idx": 3
                 }
             ],
-            "active_power": 4000,
-            "apparent_power": 4444.444444444444,
-            "power_factor": 0.9
+            "active_power": 8000,
+            "apparent_power": 8888.888888888889,
+            "power_factor": 0.9,
+            "idx": 4
+        },
+        {
+            "name": "Load 5",
+            "position": 600,
+            "active_power": 10000,
+            "v_nominal": [
+                392.5070495605469,
+                392.5070495605469,
+                392.5070495605469
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 11111.111111111111,
+            "idx": 5
+        },
+        {
+            "name": "Load 6",
+            "position": 700,
+            "active_power": 10000,
+            "v_nominal": [
+                392.2980041503906,
+                392.2980041503906,
+                392.2980041503906
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 11111.111111111111,
+            "idx": 6
         }
     ]
 }
