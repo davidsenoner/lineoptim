@@ -6,6 +6,11 @@ import json
 
 
 def calc_nested_currents(loads):
+    """
+    Calculate current by summing up all currents of line loads and all nested loads.
+    :param loads: list of loads
+    :return: Current in Ampere
+    """
     current = 0.0
     for load in loads:
         if not isinstance(load['v_nominal'], torch.Tensor):
@@ -122,6 +127,14 @@ class Line:
         return self.loads[idx]
 
     def add(self, name: str, position: float, **kwargs) -> None:
+        """
+        Add load to line
+        Note: Loads will automatically be sorted by position.
+        :param name: Name of load
+        :param position: Position of load in meters
+        :param kwargs: Additional parameters
+        :return: None
+        """
         load = {
             'name': name,
             'position': position,
@@ -138,6 +151,9 @@ class Line:
             raise ValueError('No active power and power factor defined. Check your load definition.')
         self.loads.append(load)  # add load to line
         self.loads = sorted(self.loads, key=lambda x: x['position'])  # sort loads by position
+        # assign idx to loads
+        for idx, load in enumerate(self.loads):
+            load['idx'] = idx
 
     def get_current(self, idx):
         """
@@ -158,39 +174,45 @@ class Line:
             return calc_nested_currents(load['loads'])
 
     def get_line_current(self, idx=0):
+        """
+        Calculate current at line node_id.
+        Note: Current corresponds to the current of selected node_id and all following nodes.
+        :param idx: Node ID to calulate current. 0=first node
+        :return: Current in Ampere
+        """
         return calc_nested_currents(self.loads[idx:])
 
-    def get_dUx(self, load_idx: int = None):
+    def get_dUx(self, idx: int = None):
         """
         Calculate delta U at node_id.
 
         Note: execute method compute_partial_voltages() before executing thi method in order to increase precision.
 
-        :param load_idx: Node ID of load partial voltage to calculate. 0=first node, None=last node
+        :param idx: Node ID of load partial voltage to calculate. 0=first node, None=last node
         :return: delta U at node_id
         """
 
-        if load_idx is None:
-            load_idx = self.get_load_len()
+        if idx is None:
+            idx = self.get_load_len()
         else:
-            load_idx += 1
+            idx += 1
 
-        current_list = [self.get_node_current(i) for i in range(load_idx)]
+        current_list = [self.get_current(i) for i in range(idx)]
         current_list = torch.stack(current_list)
 
         assert len(current_list), "No currents for calculation available"
 
-        if load_idx is not None:
+        if idx is not None:
             current_list[-1] += sum(
                 load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
-                for load in self.loads[load_idx:]
+                for load in self.loads[idx:]
             )
 
         length = 0
         Mw = 0
         Mb = 0
 
-        for load, current in zip(self.loads[:load_idx], current_list):
+        for load, current in zip(self.loads[:idx], current_list):
             position = load['position']
             power_factor = load['power_factor']
             phase_shift_angle = torch.acos(torch.tensor(power_factor))
