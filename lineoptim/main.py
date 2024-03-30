@@ -1,126 +1,43 @@
-import json
 import torch
-from torch import nn
-from torch.optim import Adam
-from torch import tensor
-import matplotlib.pyplot as plt
 
-from components.motor import Motor
-from components.line import Line
+from lineoptim.components import Network, Line
 
-
-class LineOptimizer(nn.Module):
-    def __init__(self, config, **kwargs):
-        super(LineOptimizer, self).__init__()
-
-        self.ue_voltage = tensor(config["ue_voltage"])  # get main line voltage
-
-        self.lines = []
-
-        # create line instance from config/json
-        self.main_line = self.create_line(config)
-        self.main_line.compute_partial_voltages()
-
-        # start resistance for optimizer
-        start_resistivity = 0.125
-
-        shape = (self.line_num, self.cores_num)
-        params = torch.full(fill_value=start_resistivity, size=shape, dtype=torch.float)  # resistances to optim
-
-        # optimisation params
-        self.resistivity = nn.Parameter(params, requires_grad=True)
-
-    @property
-    def line_num(self) -> int:
-        return len(self.lines)
-
-    @property
-    def cores_num(self) -> int:
-        return len(self.ue_voltage)
-
-    def forward(self):
-        resistivity = self.resistivity
-        lines = self.lines
-
-        # set resistivity for each line
-        for line, res in zip(lines, resistivity):
-            line.set_resistivity(res)
-
-        # compute partial voltages for each line
-        for _ in range(5):
-            for line in reversed(lines):
-                line.compute_partial_voltages()  # TODO: define qnty of iterations in case of nested lines (see default)
-
-        voltage_drop = []
-
-        # calculate voltage drop for each line
-        for line in lines:
-            dux = line.get_voltage() - line.get_dUx()  # calc voltage drop on actual line
-            voltage_drop_percent = (1 - (dux / self.ue_voltage)) * 100  # convert to %
-            voltage_drop.append(voltage_drop_percent)
-
-        return torch.stack(voltage_drop, dim=0)
-
-    def create_line(self, net, level=0) -> Line:
-        ln = Line(**net, level=level)
-        for comp in net["components"]:
-            if comp["type"] == "Motor":
-                ln.add(load=Motor(**comp))
-            if comp["type"] == "Line":
-                ln.add(load=self.create_line(comp, level=(level + 1)))
-
-        self.lines.append(ln)
-
-        return ln
-
-
-NUM_EPOCHS = 200  # number of epochs
-NETWORK_CONFIG = 'resources/line_structure.json'  # network configuration file
+LINE_CFG = 'resources/example_line.json'  # network configuration file
 
 if __name__ == '__main__':
 
-    # target voltage drop in %
-    target_voltage_drop = 5.0
+    v_nominal = torch.tensor([400.0, 400.0, 400.0])  # nominal voltage
 
-    # load network configuration
-    with open(NETWORK_CONFIG, 'r') as json_file:
-        loaded_network = json.load(json_file)
-        model = LineOptimizer(loaded_network)
+    line_params = {
+        "name": "Main power line 1",
+        "position": 0,
+        "resistivity": torch.tensor([0.125, 0.125, 0.125]),  # resistivity,
+        "reactance": torch.tensor([0.0, 0.0, 0.0]),
+        "v_nominal": v_nominal,
+    }
 
-    # shape of target data
-    shape = (model.line_num, model.cores_num)
+    main_line = Line(**line_params)  # create main line instance
 
-    target_data = torch.full(size=shape, fill_value=target_voltage_drop, dtype=torch.float)  # voltage drop in %
-    losses = []
+    main_line.add("Load 1", 100, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
+    main_line.add("Load 2", 200, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
+    main_line.add("Load 3", 300, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
+    main_line.add("Load 4", 400, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
 
-    criterion = nn.MSELoss()  # mean square error
-    optimizer = Adam(model.parameters(), lr=0.01)
+    line = Line('Sub-line 1', 500, v_nominal=v_nominal)  # create line instance
 
-    for epoch in (range(NUM_EPOCHS)):
+    line.add("Load 1.1", 100, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
+    line.add("Load 1.2", 150, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
+    line.add("Load 1.3", 200, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
+    line.add("Load 1.4", 250, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
 
-        # Forward pass
-        predictions = model()
+    main_line.add(**line)  # add line to main line
 
-        # Calculate the mean square error
-        loss = criterion(predictions, target_data)
+    main_line.add("Load 5", 600, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
+    main_line.add("Load 6", 700, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
 
-        # Backward pass and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+    main_line.save_to_json(LINE_CFG)  # save line configuration as json
 
-        # Save the loss
-        losses.append(loss.item())
-
-        # Output of progress
-        if (epoch + 1) % 10 == 0:
-            print(f'Epoch [{epoch + 1}/{NUM_EPOCHS}], Loss: {loss.item()}')
-
-    # print results
-    print(f'Predictions: {predictions}')
-
-    # plot the loss
-    plt.plot(losses)
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.show()
+    print(main_line.get_line_current(2))
+    print(main_line.get_current(2))
+    print(main_line.get_dUx())
+    main_line.compute_partial_voltages()
