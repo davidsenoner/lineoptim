@@ -1,0 +1,85 @@
+{
+    "name": "Line 1",
+    "resistivity": [
+        0.125,
+        0.125,
+        0.125
+    ],
+    "reactance": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "v_nominal": [
+        400.0,
+        400.0,
+        400.0
+    ],
+    "position": 0,
+    "loads": [
+        {
+            "name": "Load 1",
+            "position": 100,
+            "active_power": 2000,
+            "v_nominal": [
+                400.0,
+                400.0,
+                400.0
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 2222.222222222222
+        },
+        {
+            "name": "Load 2",
+            "position": 200,
+            "active_power": 2000,
+            "v_nominal": [
+                400.0,
+                400.0,
+                400.0
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 2222.222222222222
+        },
+        {
+            "name": "Line 1",
+            "position": 500,
+            "resistivity": 0,
+            "reactance": 0,
+            "v_nominal": [
+                400.0,
+                400.0,
+                400.0
+            ],
+            "loads": [
+                {
+                    "name": "Load 1.1",
+                    "position": 100,
+                    "active_power": 2000,
+                    "v_nominal": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ],
+                    "power_factor": 0.9,
+                    "apparent_power": 2222.222222222222
+                },
+                {
+                    "name": "Load 1.2",
+                    "position": 150,
+                    "active_power": 2000,
+                    "v_nominal": [
+                        400.0,
+                        400.0,
+                        400.0
+                    ],
+                    "power_factor": 0.9,
+                    "apparent_power": 2222.222222222222
+                }
+            ],
+            "active_power": 4000,
+            "apparent_power": 4444.444444444444,
+            "power_factor": 0.9
+        }
+    ]
+}
