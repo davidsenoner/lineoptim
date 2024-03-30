@@ -1,169 +1,195 @@
 import numpy as np
 from numpy.typing import NDArray
 import torch
-from torch import tensor, Tensor
-from torch import nn
-from torch.optim import Adam
+from torch import tensor
+import json
 
+
+def calc_nested_currents(loads):
+    current = 0.0
+    for load in loads:
+        if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
+            current += (load['active_power'] / torch.tensor(load['v_nominal']) * np.sqrt(3) * load['power_factor'])
+        elif len(load['loads']) > 0:
+            current += calc_nested_currents(load['loads'])
+    return current
+
+def calc_apparent_power(active_power: float, power_factor: float) -> float:
+    return active_power / power_factor
+
+
+def calc_power_factor(active_power: float, apparent_power: float) -> float:
+    return active_power / apparent_power
+
+
+def tensor_to_list(obj):
+    if isinstance(obj, torch.Tensor):
+        return obj.tolist()  # Tensor in Liste umwandeln
+    elif isinstance(obj, dict):
+        return {key: tensor_to_list(value) for key, value in obj.items()}  # Funktion auf Wörterbuchwerte anwenden
+    elif isinstance(obj, list):
+        return [tensor_to_list(element) for element in obj]  # Funktion auf Listenelemente anwenden
+    else:
+        return obj  # Objekt zurückgeben, wenn es kein Tensor, Wörterbuch oder Liste ist
+
+def list_to_tensor(obj):
+    if isinstance(obj, list):
+        if all(isinstance(i, (int, float)) for i in obj):
+            return torch.tensor(obj)  # Liste in Tensor umwandeln, wenn alle Elemente Zahlen sind
+        elif isinstance(obj, dict):
+            return {key: list_to_tensor(value) for key, value in obj.items()}
+        else:
+            return obj  # Liste zurückgeben, wenn nicht alle Elemente Zahlen sind
+    elif isinstance(obj, dict):
+        return {key: list_to_tensor(value) for key, value in obj.items()}  # Funktion auf Wörterbuchwerte anwenden
+    else:
+        return obj  # Objekt zurückgeben, wenn es kein Wörterbuch oder Liste ist
 
 class Line:
-    def __init__(self,
-                 resistivity: float | NDArray | Tensor = 0,
-                 reactance: float | NDArray | Tensor = 0,
-                 ue_voltage: float | NDArray | Tensor = 400,
-                 power_factor: float = 0.9,
-                 length: float = 0,
-                 is_main_line: bool = False,
-                 level: int = 0,
-                 **kwargs
-                 ):
+    def __init__(
+            self,
+            name,
+            position,
+            resistivity=0,
+            reactance=0,
+            v_nominal=400,
+            loads=None,
+            **kwargs
+    ):
+        """
+        Electrical line instance
+        :param resistivity: Conductor resistivity (ohm/m)
+        :param reactance: Conductor reactance (ohm/m)
+        :param v_nominal: Voltage in Volt
+        :param position: Position where actual line is connected in meters
+        :param kwargs:
+        """
+        if loads is None:
+            loads = []
 
-        self._loads = []
-        self._voltage = tensor(ue_voltage)  # Nominal voltage network
-        self._resistivity = tensor(resistivity)
-        self._reactance = tensor(reactance)
-        self._power_factor = tensor([power_factor])
-        self._length = length
-        self._is_main_line = is_main_line
-        self._level = level
+        # init params to dict
+        self._dict = {
+            'name': name,
+            'resistivity': resistivity,
+            'reactance': reactance,
+            'v_nominal': v_nominal,
+            'position': position,
+            'loads': loads
+        }
+        self._dict.update(kwargs)  # add additional parameters
+
+    def keys(self):
+        return self._dict.keys()
+
+    def __getitem__(self, key):
+        return self._dict[key]
+
+    def __setitem__(self, key, value):
+        self._dict[key] = value
+
+    def __delitem__(self, key):
+        del self._dict[key]
+
+    def __iter__(self):
+        return iter(self._dict)
 
     def __str__(self):
-        return f'Main Line ({self.level})' if self.is_main_line else f'Sub Line ({self.level})'
+        return str(self._dict)
 
-    @property
-    def is_main_line(self) -> bool:
-        return self._is_main_line
+    def __repr__(self):
+        return repr(self._dict)
 
-    @property
-    def level(self) -> int:
-        return self._level
+    def __contains__(self, key):
+        return key in self._dict
 
     @property
     def loads(self):
-        return self._loads
+        return self._dict['loads']
 
-    def get_resistivity(self) -> float | Tensor:
-        """
-        Cable resistivity (ohm/m)
-        :return:
-        """
-        return self._resistivity
+    @loads.setter
+    def loads(self, value):
+        self._dict['loads'] = value
 
-    def set_resistivity(self, resistance: float | Tensor) -> None:
-        self._resistivity = resistance
+    @property
+    def name(self):
+        return self._dict['name']
 
-    def get_length(self) -> float:
-        """
-        Distance between actual node and precedent node
-        :return: Distance in meters
-        """
-        return self._length
+    @name.setter
+    def name(self, value):
+        self._dict['name'] = value
 
-    def add(self, load) -> None:
-        """
-        Add a node to Network
+    @property
+    def position(self):
+        return self._dict['position']
 
-        :param load: Node
-        :return: None
-        """
-        self._loads.append(load)
+    @position.setter
+    def position(self, value):
+        self._dict['position'] = value
 
-    def get_load_count(self) -> int:
-        """
-        Returns load quantity on line.
-        Note: sub-lines are counted as one load!
-        :return:
-        """
-        return len(self._loads)
+    @property
+    def resistivity(self):
+        return self._dict['resistivity']
+
+    @resistivity.setter
+    def resistivity(self, value):
+        self._dict['resistivity'] = value
+
+    @property
+    def reactance(self):
+        return self._dict['reactance']
+
+    @reactance.setter
+    def reactance(self, value):
+        self._dict['reactance'] = value
+
+    @property
+    def v_nominal(self):
+        return self._dict['v_nominal']
+
+    @v_nominal.setter
+    def v_nominal(self, value):
+        self._dict['v_nominal'] = value
+
+    def get_load_len(self) -> int:
+        return len(self.loads)
 
     def get_load(self, idx: int):
-        """
-        Returns instance of load
-        :param idx: load ID to return instance
-        :return: instance of laad
-        """
-        return self._loads[idx]
+        return self.loads[idx]
 
-    def get_power_factor(self):
-        return self._power_factor
+    def add(self, name: str, position: float, **kwargs) -> None:
+        load = {
+            'name': name,
+            'position': position,
+        }
+        load.update(kwargs)  # add additional parameters
 
-    def set_power_factor(self, pf: float | torch.Tensor):
-        self._power_factor = pf
+        if 'active_power' in load and 'power_factor' in load:
+            load['apparent_power'] = load['active_power'] / load['power_factor']
+        elif len(load['loads']) > 0:
+            load['active_power'] = sum(load['active_power'] for load in load['loads'])
+            load['apparent_power'] = sum(load['apparent_power'] for load in load['loads'])
+            load['power_factor'] = load['active_power'] / load['apparent_power']
+        else:
+            raise ValueError('No active power and power factor defined. Check your load definition.')
+        self.loads.append(load)  # add load to line
+        self.loads = sorted(self.loads, key=lambda x: x['position'])  # sort loads by position
 
-    def get_phase_shift_angle(self) -> float | torch.Tensor:
-        return torch.arccos(self._power_factor)
+    def get_current(self):
+        return calc_nested_currents(self.loads)
 
-    def set_load_voltage(self, load_idx: int, voltage: float | torch.Tensor) -> None:
-        """
-        Update node voltage
+    def get_node_current(self, idx: int):
 
-        :param load_idx: ID of node to update voltage level
-        :param voltage: Node voltage [Volt]
-        :return: None
-        """
-        self._loads[load_idx].set_voltage(voltage)
+        load = self.loads[idx]
 
-    def get_load_voltage(self, load_idx: int) -> float | torch.Tensor:
-        """
-        Get node voltage of node_idx
-        :param load_idx: ID of Node to return voltage
-        :return: voltage [Volts]
-        """
-        return self._loads[load_idx].get_voltage()
+        if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
+            if not isinstance(load['v_nominal'], torch.Tensor):
+                load['v_nominal'] = torch.tensor(load['v_nominal'])
+            return load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
 
-    def get_load_current(self, load_idx: int) -> float | torch.Tensor:
-        """
-        Return load current of specified load ID
-        :param load_idx: Load ID
-        :return: Current in Amps
-        """
-        return self._loads[load_idx].get_current()
+        else:
+            return calc_nested_currents(load['loads'])
 
-    def get_voltage(self) -> float | torch.Tensor:
-        """
-        Nominal network voltage. Will be used as default node voltage.
-        Call compute_partial_voltages() method to compute correct node voltage.
-
-        :return: Network voltage [Volt]
-        """
-        return self._voltage
-
-    def set_voltage(self, voltage: float | torch.Tensor) -> None:
-        """
-        Set nominal Network voltage. Will be used as default node voltage.
-        :param voltage: Network voltage [Volt]
-        :return: None
-        """
-        self._voltage = voltage
-
-    def get_current(self) -> float | torch.Tensor:
-        """
-        Calculates sum of all load currents
-        Note: execute compute_partial_voltages() before calling this method!
-
-        :return: Current [Amps]
-        """
-        return sum(load.get_current() for load in self._loads)
-
-    def get_current_at_load(self, idx: int):
-        return sum(load.get_current() for load in self._loads[idx:])
-
-    def get_dU_percent(self, load_idx: int = None) -> float | torch.Tensor:
-        """
-        Get voltage drop (dU) in percent on actual line
-        :return: percent voltage drop
-        """
-        dU = self.get_dUx(load_idx)
-        return (dU / self._voltage) * 100
-
-    def get_load_distance(self, idx: int) -> float | torch.Tensor:
-        distance = sum([self._loads[i].get_length() for i in range(idx + 1)])
-        return distance
-
-    def get_line_length(self) -> float | torch.Tensor:
-        return self.get_load_distance(self.get_load_count() - 1)
-
-    def get_dUx(self, load_idx: int = None) -> float | torch.Tensor:
+    def get_dUx(self, load_idx: int = None):
         """
         Calculate delta U at node_id.
 
@@ -174,42 +200,50 @@ class Line:
         """
 
         if load_idx is None:
-            load_idx = self.get_load_count()
+            load_idx = self.get_load_len()
         else:
             load_idx += 1
 
-        current_list = [self._loads[i].get_current() for i in range(load_idx)]
+        current_list = [self.get_node_current(i) for i in range(load_idx)]
         current_list = torch.stack(current_list)
 
         assert len(current_list), "No currents for calculation available"
 
         if load_idx is not None:
-            current_list[-1] += sum(load.get_current() for load in self._loads[load_idx:])
+            current_list[-1] += sum(
+                load['active_power'] / load['v_nominal'] * np.sqrt(3) * load['power_factor']
+                for load in self.loads[load_idx:]
+            )
 
         length = 0
         Mw = 0
         Mb = 0
 
-        for load, current in zip(self._loads[:load_idx], current_list):
-            length += load.get_length()
+        for load, current in zip(self.loads[:load_idx], current_list):
+            position = load['position']
+            power_factor = load['power_factor']
+            phase_shift_angle = torch.acos(torch.tensor(power_factor))
 
-            # calc current momentum
-            Mw += current * length * load.get_power_factor()
-
-            # calc current reactive moment
-            Mb += current * length * torch.tan(load.get_phase_shift_angle())
+            Mw += current * position * power_factor  # calc current momentum
+            Mb += current * position * torch.tan(phase_shift_angle)  # calc current reactive moment
 
         # conductor_impedance = np.vectorize(complex)(self._conductor_resistivity, self._conductor_reactance)
         # current_moment = np.vectorize(complex)(Mw, -Mb)
 
-        conductor_impedance = (self._resistivity / 1000) + 1j * self._reactance
+        if not isinstance(self.resistivity, torch.Tensor):
+            resistivity = torch.tensor(self.resistivity)
+        else:
+            resistivity = self.resistivity
+
+        if not isinstance(self.reactance, torch.Tensor):
+            reactance = torch.tensor(self.reactance)
+        else:
+            reactance = self.reactance
+
+        conductor_impedance = (resistivity / 1000) + 1j * reactance  # TODO: check if resistivity is in ohm/m -> /1000
         current_moment = Mw - 1j * Mb
 
-        dUx = abs(conductor_impedance[:current_moment.size(0)] * current_moment)
-
-        # return torch.abs(conductor_impedance[:current_moment.size] * current_moment)
-
-        return dUx
+        return abs(conductor_impedance * current_moment)
 
     def compute_partial_voltages(self, iterations: int = 2) -> None:
         """
@@ -219,67 +253,20 @@ class Line:
         :return: None
         """
 
+        if not isinstance(self.v_nominal, torch.Tensor):
+            self.v_nominal = torch.tensor(self.v_nominal)
+
         # recompute partial voltages
         for i in range(iterations):
-            for x in range(self.get_load_count()):  # iterate over all nodes
-                drop_voltage = self.get_voltage() - self.get_dUx(x)  # get partial voltage at specific node
-                self._loads[x].set_voltage(drop_voltage.detach())
+            for x in range(self.get_load_len()):  # iterate over all nodes
+                drop_voltage = self.v_nominal - self.get_dUx(x)  # get partial voltage at specific node
+                self.loads[x]["v_nominal"] = drop_voltage.detach()
 
+    def save_to_json(self, filename: str):
+        with open(filename, 'w') as f:
+            json.dump(tensor_to_list(self._dict), f, indent=4)
 
-class Motor:
-    """
-    Asynchronous motor with 3phases (no neutral conductor)
-    """
+    def load_from_json(self, filename: str):
+        with open(filename, 'r') as f:
+            self._dict = json.load(f)
 
-    def __init__(self, active_power: float,
-                 voltage: float | NDArray | Tensor = 400,
-                 efficiency: float = 1,
-                 power_factor: float = 0.9,
-                 distance: float = 0,
-                 **kwargs
-                 ):
-        self._voltage = tensor(voltage)
-        self._active_power = tensor([active_power])
-        self._efficiency = tensor([efficiency])
-        self._power_factor = tensor([power_factor])
-        self._distance = distance
-
-    def get_length(self) -> float:
-        """
-        Distance between actual node and precedent node
-        :return: Distance in meters
-        """
-        return self._distance
-
-    def __str__(self):
-        return f'Motor'
-
-    def get_voltage(self) -> float | Tensor:
-        return self._voltage
-
-    def set_voltage(self, voltage: float | torch.Tensor) -> None:
-        self._voltage = voltage
-
-    def get_active_power(self) -> float | torch.Tensor:
-        return self._active_power
-
-    def set_active_power(self, power: float | torch.Tensor) -> None:
-        self._active_power = power
-
-    def get_efficiency(self):
-        return self._efficiency
-
-    def get_mechanical_power(self):
-        return self._active_power / self._efficiency
-
-    def get_power_factor(self):
-        return self._power_factor
-
-    def set_power_factor(self, pf: float):
-        self._power_factor = pf
-
-    def get_phase_shift_angle(self) -> float | Tensor:
-        return torch.arccos(self._power_factor)
-
-    def get_current(self):
-        return self._active_power / (self._voltage * np.sqrt(3) * self._power_factor)
