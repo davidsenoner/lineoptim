@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lineoptim"
+version = "1.0.0"
+description = "A line optimization package."
+authors = [
+    {
+        name = "David Senoner",
+        email = "david.senoner@gmail.com",
+    }
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+
+[tool.poetry]
+name = "lineoptim"
+version = "0.1.0"
+description = "A line optimization package."
+authors = ["David Senoner <david.senoner@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["line optimization", "optimization", "SDG", "stochastic gradient descent", "electrical conductor"]
+repository = "https://github.com/davidsenoner/lineoptim"
+
+[tool.poetry.dependencies]
+python = ">=3.8"
