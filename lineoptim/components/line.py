@@ -8,11 +8,14 @@ import json
 def calc_nested_currents(loads):
     current = 0.0
     for load in loads:
+        if not isinstance(load['v_nominal'], torch.Tensor):
+            load['v_nominal'] = torch.tensor(load['v_nominal'])
         if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
-            current += (load['active_power'] / torch.tensor(load['v_nominal']) * np.sqrt(3) * load['power_factor'])
+            current += (load['active_power'] / load['v_nominal'] * np.sqrt(3) * load['power_factor'])
         elif len(load['loads']) > 0:
             current += calc_nested_currents(load['loads'])
     return current
+
 
 def calc_apparent_power(active_power: float, power_factor: float) -> float:
     return active_power / power_factor
@@ -32,6 +35,7 @@ def tensor_to_list(obj):
     else:
         return obj  # Objekt zurückgeben, wenn es kein Tensor, Wörterbuch oder Liste ist
 
+
 def list_to_tensor(obj):
     if isinstance(obj, list):
         if all(isinstance(i, (int, float)) for i in obj):
@@ -44,6 +48,7 @@ def list_to_tensor(obj):
         return {key: list_to_tensor(value) for key, value in obj.items()}  # Funktion auf Wörterbuchwerte anwenden
     else:
         return obj  # Objekt zurückgeben, wenn es kein Wörterbuch oder Liste ist
+
 
 class Line:
     def __init__(
@@ -109,46 +114,6 @@ class Line:
     @loads.setter
     def loads(self, value):
         self._dict['loads'] = value
-
-    @property
-    def name(self):
-        return self._dict['name']
-
-    @name.setter
-    def name(self, value):
-        self._dict['name'] = value
-
-    @property
-    def position(self):
-        return self._dict['position']
-
-    @position.setter
-    def position(self, value):
-        self._dict['position'] = value
-
-    @property
-    def resistivity(self):
-        return self._dict['resistivity']
-
-    @resistivity.setter
-    def resistivity(self, value):
-        self._dict['resistivity'] = value
-
-    @property
-    def reactance(self):
-        return self._dict['reactance']
-
-    @reactance.setter
-    def reactance(self, value):
-        self._dict['reactance'] = value
-
-    @property
-    def v_nominal(self):
-        return self._dict['v_nominal']
-
-    @v_nominal.setter
-    def v_nominal(self, value):
-        self._dict['v_nominal'] = value
 
     def get_load_len(self) -> int:
         return len(self.loads)
@@ -230,15 +195,15 @@ class Line:
         # conductor_impedance = np.vectorize(complex)(self._conductor_resistivity, self._conductor_reactance)
         # current_moment = np.vectorize(complex)(Mw, -Mb)
 
-        if not isinstance(self.resistivity, torch.Tensor):
-            resistivity = torch.tensor(self.resistivity)
+        if not isinstance(self['resistivity'], torch.Tensor):
+            resistivity = torch.tensor(self['resistivity'])
         else:
-            resistivity = self.resistivity
+            resistivity = self['resistivity']
 
-        if not isinstance(self.reactance, torch.Tensor):
-            reactance = torch.tensor(self.reactance)
+        if not isinstance(self['reactance'], torch.Tensor):
+            reactance = torch.tensor(self['reactance'])
         else:
-            reactance = self.reactance
+            reactance = self['reactance']
 
         conductor_impedance = (resistivity / 1000) + 1j * reactance  # TODO: check if resistivity is in ohm/m -> /1000
         current_moment = Mw - 1j * Mb
@@ -253,13 +218,13 @@ class Line:
         :return: None
         """
 
-        if not isinstance(self.v_nominal, torch.Tensor):
-            self.v_nominal = torch.tensor(self.v_nominal)
+        if not isinstance(self['v_nominal'], torch.Tensor):
+            self['v_nominal'] = torch.tensor(self['v_nominal'])
 
         # recompute partial voltages
         for i in range(iterations):
             for x in range(self.get_load_len()):  # iterate over all nodes
-                drop_voltage = self.v_nominal - self.get_dUx(x)  # get partial voltage at specific node
+                drop_voltage = self['v_nominal'] - self.get_dUx(x)  # get partial voltage at specific node
                 self.loads[x]["v_nominal"] = drop_voltage.detach()
 
     def save_to_json(self, filename: str):
@@ -269,4 +234,3 @@ class Line:
     def load_from_json(self, filename: str):
         with open(filename, 'r') as f:
             self._dict = json.load(f)
-
