@@ -36,4 +36,7 @@ setup(
     'torch',
     'matplotlib'
   ],
+  project_urls={
+        "Github": "https://github.com/davidsenoner/lineoptim",
+    },
 )
