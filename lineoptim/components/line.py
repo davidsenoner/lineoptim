@@ -89,6 +89,9 @@ class Line:
     def keys(self):
         return self._dict.keys()
 
+    def values(self):
+        return self._dict.values()
+
     def dict(self):
         return self._dict
 
