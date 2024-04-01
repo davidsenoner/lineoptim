@@ -30,7 +30,7 @@ if __name__ == '__main__':
     line.add("Load 1.3", 200, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
     line.add("Load 1.4", 250, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
 
-    main_line.add(**line)  # add line to main line
+    main_line.add(**line.dict())  # add line to main line
 
     main_line.add("Load 5", 600, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
     main_line.add("Load 6", 700, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
