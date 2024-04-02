@@ -99,6 +99,9 @@ class Line:
     def __contains__(self, key):
         return key in self._dict
 
+    def __len__(self):
+        return len(self._dict['loads'])
+
     @property
     def loads(self):
         return self._dict['loads']
@@ -106,12 +109,6 @@ class Line:
     @loads.setter
     def loads(self, value):
         self._dict['loads'] = value
-
-    def get_load_len(self) -> int:
-        return len(self.loads)
-
-    def get_load(self, idx: int):
-        return self.loads[idx]
 
     def add(self, name: str, position: float, **kwargs) -> None:
         """
@@ -122,12 +119,7 @@ class Line:
         :param kwargs: Additional parameters
         :return: None
         """
-        load = {
-            'name': name,
-            'position': position,
-        }
-        load.update(kwargs)  # add additional parameters
-
+        load = {'name': name, 'position': position, **kwargs}
         if 'active_power' in load and 'power_factor' in load:
             load['apparent_power'] = load['active_power'] / load['power_factor']
         elif len(load['loads']) > 0:
@@ -136,60 +128,17 @@ class Line:
             load['power_factor'] = load['active_power'] / load['apparent_power']
         else:
             raise ValueError('No active power and power factor defined. Check your load definition.')
-        self.loads.append(load)  # add load to line
-        self.loads = sorted(self.loads, key=lambda x: x['position'])  # sort loads by position
-        # assign idx to loads
-        for idx, load in enumerate(self.loads):
-            load['idx'] = idx
+        self._dict['loads'].append(load)
+        self._dict['loads'] = sorted(self._dict['loads'], key=lambda x: x['position'])  # sort loads by position
 
-    @staticmethod
-    def calc_nested_currents(loads):
-        """
-        Calculate current by summing up all currents of line loads and all nested loads.
-        :param loads: list of loads
-        :return: Current in Ampere
-        """
-        current = 0.0
-        for load in loads:
-            if not isinstance(load['v_nominal'], torch.Tensor):
-                load['v_nominal'] = torch.tensor(load['v_nominal'])
-            if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
-                current += load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
-            elif len(load['loads']) > 0:
-                current += Line.calc_nested_currents(load['loads'])
-        return current
+        for idx, load in enumerate(self._dict['loads']):
+            load['idx'] = idx # add index to load
 
-    @staticmethod
-    def get_current(load):
-        """
-        Calculate current at node_id.
-        Note: Current corresponds to the current of selected node_id.
-        :param load: Load configuration
-        :return: Current in Ampere
-        """
-
-        # if load is a single load
+    def get_current(self, load):
         if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
-            if not isinstance(load['v_nominal'], torch.Tensor):
-                load['v_nominal'] = torch.tensor(load['v_nominal'])
             return load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
-
-        # if load has nested loads (sub-line)
         elif len(load['loads']) > 0:
-            current = 0.0
-            for load in load['loads']:
-                # convert v_nominal to tensor
-                if not isinstance(load['v_nominal'], torch.Tensor):
-                    load['v_nominal'] = torch.tensor(load['v_nominal'])
-
-                # calculate current if it is a single load
-                if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
-                    current += load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
-
-                # calculate current if it is a sub-line
-                elif len(load['loads']) > 0:
-                    current += Line.get_current(load)
-            return current
+            return sum(self.get_current(sub_load) for sub_load in load['loads'])
         else:
             return 0.0
 
@@ -200,16 +149,10 @@ class Line:
         :param idx: Load index
         :return: Current in Ampere
         """
-        return Line.get_current(self.loads[idx])
+        return self.get_current(self._dict['loads'][idx])
 
-    def get_current_at_idx(self, idx=0):
-        """
-        Calculate current at line node_id.
-        Note: Current corresponds to the current of selected node_id and all following nodes.
-        :param idx: Node ID to calulate current. 0=first node
-        :return: Current in Ampere
-        """
-        return Line.calc_nested_currents(self.loads[idx:])
+    def get_spot_current(self, idx=0):
+        return sum(self.get_current(load) for load in self._dict['loads'][idx:])
 
     @staticmethod
     def get_dUx(resistivity, reactance, loads, node_id: int = None, **kwargs):
