@@ -168,22 +168,48 @@ class Line:
         :return: Current in Ampere
         """
 
+        # if load is a single load
         if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
             if not isinstance(load['v_nominal'], torch.Tensor):
                 load['v_nominal'] = torch.tensor(load['v_nominal'])
             return load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
 
-        else:
-            return Line.calc_nested_currents(load['loads'])
+        # if load has nested loads (sub-line)
+        elif len(load['loads']) > 0:
+            current = 0.0
+            for load in load['loads']:
+                # convert v_nominal to tensor
+                if not isinstance(load['v_nominal'], torch.Tensor):
+                    load['v_nominal'] = torch.tensor(load['v_nominal'])
 
-    def get_line_current(self, node_id=0):
+                # calculate current if it is a single load
+                if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
+                    current += load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
+
+                # calculate current if it is a sub-line
+                elif len(load['loads']) > 0:
+                    current += Line.get_current(load)
+            return current
+        else:
+            return 0.0
+
+    def get_current_by_idx(self, idx: int):
+        """
+        Calculate current by idx.
+        Note: Current corresponds to the current of selected node_id.
+        :param idx: Load index
+        :return: Current in Ampere
+        """
+        return Line.get_current(self.loads[idx])
+
+    def get_current_at_idx(self, idx=0):
         """
         Calculate current at line node_id.
         Note: Current corresponds to the current of selected node_id and all following nodes.
-        :param node_id: Node ID to calulate current. 0=first node
+        :param idx: Node ID to calulate current. 0=first node
         :return: Current in Ampere
         """
-        return Line.calc_nested_currents(self.loads[node_id:])
+        return Line.calc_nested_currents(self.loads[idx:])
 
     @staticmethod
     def get_dUx(resistivity, reactance, loads, node_id: int = None, **kwargs):

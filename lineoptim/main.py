@@ -35,7 +35,7 @@ if __name__ == '__main__':
     main_line.add("Load 5", 600, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
     main_line.add("Load 6", 700, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
 
-    print(main_line.get_line_current(2))
+    print(main_line.get_current_at_idx(2))
     print(Line.get_current(main_line.loads[2]))
     print(f"Udx: {Line.get_dUx(node_id=4, **main_line.dict())}")
     Line.compute_partial_voltages(main_line.dict(), iterations=5)
