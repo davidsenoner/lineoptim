@@ -17,31 +17,15 @@ logging.basicConfig(
 
 
 class NetworkOptimizer(nn.Module):
-    def __init__(self, line, v_nominal, initial_resistance: float = 0.125, **kwargs):
+    def __init__(self, line, **kwargs):
         super(NetworkOptimizer, self).__init__()
 
-        self._v_nominal = tensor(v_nominal)
-
-        self.lines = line.lines_to_optimize
-        self.cores = line.cores
-
-        shape = (self.line_num, self.cores_num)
-        params = torch.full(fill_value=initial_resistance, size=shape, dtype=torch.float)  # resistances to optim
-
         # optimisation params
-        self.resistivity = nn.Parameter(params, requires_grad=True)
-
-    @property
-    def line_num(self) -> int:
-        return len(self.lines)
-
-    @property
-    def cores_num(self) -> int:
-        return len(self.cores)
+        self.resistivity = nn.Parameter(line.get_resistivity_tensor(), requires_grad=True)
 
     def forward(self):
         resistivity = self.resistivity
-        lines = self.lines
+        lines = self.lines_to_optimize
 
         # set resistivity for each line
         for line, res in zip(lines, resistivity):
@@ -64,9 +48,10 @@ class NetworkOptimizer(nn.Module):
 
 
 class Network:
-    def __init__(self, v_nominal: float = 400.0):
-        self._v_nominal = v_nominal
-        self._lines = []
+    def __init__(self, lines=None):
+        if lines is None:
+            lines = []
+        self._lines = lines
 
     def add(self, component):
 
@@ -74,12 +59,6 @@ class Network:
             self._lines.append(component)
         else:
             raise ValueError(f'Component type is not supported')
-
-    def clear(self):
-        self._lines = []
-
-    def remove(self, component):
-        self._lines.remove(component)
 
     def optimize(self, line_idx=0, epochs: int = 200, lr: float = 0.1, max_v_drop: float = 5.0) -> None:
         """
@@ -98,12 +77,12 @@ class Network:
         if epochs < 1:
             raise ValueError('Epochs must be greater than 0')
 
-        model = NetworkOptimizer(line=self._lines[line_idx], v_nominal=self._v_nominal)  # create model
+        line = self._lines[line_idx]
+        resistivity_t = line.get_resistivity_tensor()
 
-        # shape of target data
-        shape = (model.line_num, model.cores_num)
+        model = NetworkOptimizer(line)  # create model
 
-        target_data = torch.full(size=shape, fill_value=max_v_drop, dtype=torch.float)  # voltage drop in %
+        target_data = torch.full_like(resistivity_t, fill_value=max_v_drop)  # voltage drop in %
         losses = []
 
         criterion = nn.MSELoss()  # mean square error
