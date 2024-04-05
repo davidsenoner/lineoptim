@@ -11,6 +11,14 @@ def calc_power_factor(active_power: float, apparent_power: float) -> float:
     return active_power / apparent_power
 
 
+def find_dict_by_name(list_of_dicts, name):
+    return next((item for item in list_of_dicts if item['name'] == name), None)
+
+
+def get_line_names(list_of_dicts):
+    return [item['name'] for item in list_of_dicts if item.get('is_line')]
+
+
 def tensor_to_list(obj):
     if isinstance(obj, torch.Tensor):
         return obj.tolist()  # Tensor in Liste umwandeln
@@ -65,9 +73,12 @@ class Line:
             'reactance': reactance,
             'v_nominal': v_nominal,
             'position': position,
-            'loads': loads
+            'loads': loads,
+            'is_line': True,
+            'cores': len(v_nominal) if isinstance(v_nominal, list) or isinstance(v_nominal, torch.Tensor) else 1
         }
         self._dict.update(kwargs)  # add additional parameters
+        self._lines_to_optimize = []
 
     def keys(self):
         return self._dict.keys()
@@ -110,6 +121,26 @@ class Line:
     def loads(self, value):
         self._dict['loads'] = value
 
+    def get_resistivity_tensor(self):
+        lines = [self._dict['resistivity']]
+        lines.extend(self._get_lines_resistivity(self._dict))
+
+        return torch.stack(lines)
+
+    def _get_lines_resistivity(self, line):
+        lines = []
+        for load in line['loads']:
+            if load.get('is_line'):
+                lines.append(load['resistivity'])
+                lines.extend(self._get_lines_resistivity(load))
+        return lines
+
+    def cores_to_optimize(self):
+        return self.get_resistivity_tensor().shape[1]
+
+    def loads_to_optimize(self):
+        return self.get_resistivity_tensor().shape[0]
+
     def add(self, name: str, position: float, **kwargs) -> None:
         """
         Add load to line
@@ -121,18 +152,22 @@ class Line:
         """
         load = {'name': name, 'position': position, **kwargs}
         if 'active_power' in load and 'power_factor' in load:
-            load['apparent_power'] = load['active_power'] / load['power_factor']
-        elif len(load['loads']) > 0:
-            load['active_power'] = sum(load['active_power'] for load in load['loads'])
-            load['apparent_power'] = sum(load['apparent_power'] for load in load['loads'])
-            load['power_factor'] = load['active_power'] / load['apparent_power']
+            load['apparent_power'] = load['active_power'] / load['power_factor']  # calc apparent power
+            load['is_line'] = False  # set is_line to False
+        elif len(load['loads']) > 0:  # check if it is a line
+            load['active_power'] = sum(load['active_power'] for load in load['loads'])  # sum active power
+            load['apparent_power'] = sum(load['apparent_power'] for load in load['loads'])  # sum apparent power
+            load['power_factor'] = load['active_power'] / load['apparent_power']  # calc power factor
+            load['is_line'] = True  # set is_line to True
         else:
             raise ValueError('No active power and power factor defined. Check your load definition.')
+
+        load['cores'] = load.get('cores', len(load['v_nominal']))  # add cores information
         self._dict['loads'].append(load)
         self._dict['loads'] = sorted(self._dict['loads'], key=lambda x: x['position'])  # sort loads by position
 
         for idx, load in enumerate(self._dict['loads']):
-            load['idx'] = idx # add index to load
+            load['idx'] = idx  # add index to load
 
     def get_current(self, load):
         if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
@@ -154,8 +189,7 @@ class Line:
     def get_spot_current(self, idx=0):
         return sum(self.get_current(load) for load in self._dict['loads'][idx:])
 
-    @staticmethod
-    def get_dUx(resistivity, reactance, loads, node_id: int = None, **kwargs):
+    def get_dUx(self, resistivity, reactance, loads, node_id: int = None, **kwargs):
         """
         Calculate delta U at node_id.
 
@@ -170,7 +204,7 @@ class Line:
 
         node_id = len(loads) if node_id is None else node_id + 1
 
-        current_list = torch.stack([Line.get_current(load) for load in loads])
+        current_list = torch.stack([self.get_current(load) for load in loads])
 
         assert len(current_list), "No currents for calculation available"
 
@@ -198,8 +232,7 @@ class Line:
 
         return abs(conductor_impedance * current_moment)
 
-    @staticmethod
-    def compute_partial_voltages(line, iterations: int = 2, **kwargs) -> None:
+    def compute_partial_voltages(self, line=None, iterations: int = 2, **kwargs) -> None:
         """
         Computes all partial voltages by iterating over the nodes multiple times (param: iteration).
         Note: In case of nested line increase iterations count
@@ -208,14 +241,17 @@ class Line:
         :return: None
         """
 
+        if line is None:
+            line = self._dict
+
         # recompute partial voltages
         for _ in range(iterations):
             for node_id, load in enumerate(line['loads']):
-                drop_voltage = line['v_nominal'] - Line.get_dUx(node_id=node_id, **line)
+                drop_voltage = line['v_nominal'] - self.get_dUx(node_id=node_id, **line)
                 load["v_nominal"] = drop_voltage.detach()
 
                 if load.get('loads'):
-                    Line.compute_partial_voltages(load, iterations=iterations)
+                    self.compute_partial_voltages(load, iterations=iterations)
 
     def save_to_json(self, filename: str):
         with open(filename, 'w') as f:
