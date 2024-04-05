@@ -63,6 +63,7 @@ class Line:
         :param position: Position where actual line is connected in meters
         :param kwargs:
         """
+        self._idx_set_t = None
         if loads is None:
             loads = []
 
@@ -121,11 +122,33 @@ class Line:
     def loads(self, value):
         self._dict['loads'] = value
 
-    def get_resistivity_tensor(self):
-        lines = [self._dict['resistivity']]
-        lines.extend(self._get_lines_resistivity(self._dict))
+    def get_resistivity_tensor(self) -> torch.Tensor:
+        """
+        Get resistivity tensor representing resistivity of each core for each load
+        Note: Resistivity tensor is a 2D tensor with shape (n_loads, n_cores)
+        :return: Resistivity tensor
+        """
+        lines = [self._dict['resistivity']]  # get resistivity of actual line
+        lines.extend(self._get_lines_resistivity(self._dict))  # get resistivity of nested lines
 
-        return torch.stack(lines)
+        return torch.stack(lines)  # stack resistivity to tensor
+
+    def set_resistivity_tensor(self, resistivity: torch.Tensor) -> None:
+        """
+        Set resistivity tensor representing resistivity of each core for each load
+        :param resistivity: Resistivity tensor
+        :return: None
+        """
+        self._idx_set_t = 0
+        self._dict['resistivity'] = resistivity[self._idx_set_t]  # set resistivity of actual line
+        self._set_lines_resistivity(self._dict, resistivity)  # set resistivity of nested lines
+
+    def _set_lines_resistivity(self, line, resistivity):
+        for load in line['loads']:
+            if load.get('is_line'):
+                self._idx_set_t += 1
+                load['resistivity'] = resistivity[self._idx_set_t]
+                self._set_lines_resistivity(load, resistivity)
 
     def _get_lines_resistivity(self, line):
         lines = []
@@ -136,10 +159,12 @@ class Line:
         return lines
 
     def cores_to_optimize(self):
-        return self.get_resistivity_tensor().shape[1]
+        """ Get number of cores to optimize """
+        return self.get_resistivity_tensor().shape[1]  # get number of cores
 
     def loads_to_optimize(self):
-        return self.get_resistivity_tensor().shape[0]
+        """ Get number of loads to optimize """
+        return self.get_resistivity_tensor().shape[0]  # get number of loads
 
     def add(self, name: str, position: float, **kwargs) -> None:
         """
