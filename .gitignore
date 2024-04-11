@@ -3,3 +3,4 @@
 *.pyc
 /lineoptim.egg-info
 /dist
+/.ipynb_checkpoints/
