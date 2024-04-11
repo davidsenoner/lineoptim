@@ -1,9 +1,9 @@
 {
     "name": "Main power line 1",
     "resistivity": [
-        0.125,
-        0.125,
-        0.125
+        0.06681424379348755,
+        0.06681424379348755,
+        0.06681424379348755
     ],
     "reactance": [
         0.0,
@@ -22,12 +22,14 @@
             "position": 100,
             "active_power": 20000,
             "v_nominal": [
-                397.7576599121094,
-                397.7576599121094,
-                397.7576599121094
+                399.7801818847656,
+                399.7801818847656,
+                399.7801818847656
             ],
             "power_factor": 0.9,
             "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
             "idx": 0
         },
         {
@@ -35,12 +37,14 @@
             "position": 200,
             "active_power": 20000,
             "v_nominal": [
-                395.92730712890625,
-                395.92730712890625,
-                395.92730712890625
+                399.340087890625,
+                399.340087890625,
+                399.340087890625
             ],
             "power_factor": 0.9,
             "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
             "idx": 1
         },
         {
@@ -48,12 +52,14 @@
             "position": 300,
             "active_power": 20000,
             "v_nominal": [
-                394.5108337402344,
-                394.5108337402344,
-                394.5108337402344
+                398.6788635253906,
+                398.6788635253906,
+                398.6788635253906
             ],
             "power_factor": 0.9,
             "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
             "idx": 2
         },
         {
@@ -61,108 +67,220 @@
             "position": 400,
             "active_power": 20000,
             "v_nominal": [
-                393.5096435546875,
-                393.5096435546875,
-                393.5096435546875
+                397.7952575683594,
+                397.7952575683594,
+                397.7952575683594
             ],
             "power_factor": 0.9,
             "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
             "idx": 3
         },
         {
-            "name": "Sub-line 1",
+            "name": "Load 5",
             "position": 500,
-            "resistivity": 0,
+            "active_power": 20000,
+            "v_nominal": [
+                396.6876525878906,
+                396.6876525878906,
+                396.6876525878906
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
+            "idx": 4
+        },
+        {
+            "name": "Sub-line 1",
+            "position": 550,
+            "resistivity": [
+                0.4972195625305176,
+                0.49711817502975464,
+                0.4970160722732544
+            ],
             "reactance": 0,
             "v_nominal": [
-                392.9248352050781,
-                392.9248352050781,
-                392.9248352050781
+                391.7528076171875,
+                391.7528076171875,
+                391.7528076171875
             ],
             "loads": [
                 {
                     "name": "Load 1.1",
                     "position": 100,
-                    "active_power": 2000,
+                    "active_power": 20000,
                     "v_nominal": [
-                        400.0,
-                        400.0,
-                        400.0
+                        390.0791015625,
+                        390.0794372558594,
+                        390.07977294921875
                     ],
                     "power_factor": 0.9,
-                    "apparent_power": 2222.222222222222,
+                    "apparent_power": 22222.222222222223,
+                    "is_line": false,
+                    "cores": 3,
                     "idx": 0
                 },
                 {
                     "name": "Load 1.2",
                     "position": 150,
-                    "active_power": 2000,
+                    "active_power": 20000,
                     "v_nominal": [
-                        400.0,
-                        400.0,
-                        400.0
+                        387.55218505859375,
+                        387.55303955078125,
+                        387.55389404296875
                     ],
                     "power_factor": 0.9,
-                    "apparent_power": 2222.222222222222,
+                    "apparent_power": 22222.222222222223,
+                    "is_line": false,
+                    "cores": 3,
                     "idx": 1
                 },
                 {
                     "name": "Load 1.3",
                     "position": 200,
-                    "active_power": 2000,
+                    "active_power": 20000,
                     "v_nominal": [
-                        400.0,
-                        400.0,
-                        400.0
+                        384.15313720703125,
+                        384.1546630859375,
+                        384.1562194824219
                     ],
                     "power_factor": 0.9,
-                    "apparent_power": 2222.222222222222,
+                    "apparent_power": 22222.222222222223,
+                    "is_line": false,
+                    "cores": 3,
                     "idx": 2
                 },
                 {
                     "name": "Load 1.4",
                     "position": 250,
-                    "active_power": 2000,
+                    "active_power": 20000,
                     "v_nominal": [
-                        400.0,
-                        400.0,
-                        400.0
+                        379.85626220703125,
+                        379.85870361328125,
+                        379.86114501953125
                     ],
                     "power_factor": 0.9,
-                    "apparent_power": 2222.222222222222,
+                    "apparent_power": 22222.222222222223,
+                    "is_line": false,
+                    "cores": 3,
                     "idx": 3
                 }
             ],
-            "active_power": 8000,
-            "apparent_power": 8888.888888888889,
+            "is_line": true,
+            "cores": 3,
+            "active_power": 80000,
+            "apparent_power": 88888.88888888889,
             "power_factor": 0.9,
-            "idx": 4
-        },
-        {
-            "name": "Load 5",
-            "position": 600,
-            "active_power": 10000,
-            "v_nominal": [
-                392.5070495605469,
-                392.5070495605469,
-                392.5070495605469
-            ],
-            "power_factor": 0.9,
-            "apparent_power": 11111.111111111111,
             "idx": 5
         },
         {
             "name": "Load 6",
+            "position": 600,
+            "active_power": 20000,
+            "v_nominal": [
+                390.4023132324219,
+                390.4023132324219,
+                390.4023132324219
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
+            "idx": 6
+        },
+        {
+            "name": "Load 7",
             "position": 700,
+            "active_power": 20000,
+            "v_nominal": [
+                388.8202819824219,
+                388.8202819824219,
+                388.8202819824219
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
+            "idx": 7
+        },
+        {
+            "name": "Load 8",
+            "position": 800,
+            "active_power": 20000,
+            "v_nominal": [
+                387.0037841796875,
+                387.0037841796875,
+                387.0037841796875
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
+            "idx": 8
+        },
+        {
+            "name": "Load 9",
+            "position": 900,
+            "active_power": 20000,
+            "v_nominal": [
+                384.9493103027344,
+                384.9493103027344,
+                384.9493103027344
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
+            "idx": 9
+        },
+        {
+            "name": "Load 10",
+            "position": 1000,
+            "active_power": 20000,
+            "v_nominal": [
+                382.6528625488281,
+                382.6528625488281,
+                382.6528625488281
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": 3,
+            "idx": 10
+        },
+        {
+            "name": "Load 5",
+            "position": 1100,
             "active_power": 10000,
             "v_nominal": [
-                392.2980041503906,
-                392.2980041503906,
-                392.2980041503906
+                381.3856201171875,
+                381.3856201171875,
+                381.3856201171875
             ],
             "power_factor": 0.9,
             "apparent_power": 11111.111111111111,
-            "idx": 6
+            "is_line": false,
+            "cores": 3,
+            "idx": 11
+        },
+        {
+            "name": "Load 6",
+            "position": 1200,
+            "active_power": 10000,
+            "v_nominal": [
+                379.9981384277344,
+                379.9981384277344,
+                379.9981384277344
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 11111.111111111111,
+            "is_line": false,
+            "cores": 3,
+            "idx": 12
         }
-    ]
+    ],
+    "is_line": true,
+    "cores": 3
 }
