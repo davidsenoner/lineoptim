@@ -6,7 +6,7 @@ from torch.optim import Adam
 from torch import tensor
 import matplotlib.pyplot as plt
 
-from lineoptim.components import Line
+from lineoptim.components import Line, compute_partial_voltages
 
 logger = logging.getLogger(__name__)
 
@@ -15,36 +15,36 @@ logging.basicConfig(
     format="%(asctime)s - %(name)-11s - %(levelname)-7s - %(message)s",
 )
 
+# disable logging for matplotlib
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+
+# disable logging for PIL
+logging.getLogger('PIL').setLevel(logging.WARNING)
+
 
 class NetworkOptimizer(nn.Module):
     def __init__(self, line, **kwargs):
         super(NetworkOptimizer, self).__init__()
 
+        self.line = line
+        self.v_nominal = line['v_nominal']
+
         # optimisation params
         self.resistivity = nn.Parameter(line.get_resistivity_tensor(), requires_grad=True)
 
+        print(f"Initial resistivity: {self.resistivity}")
+
     def forward(self):
-        resistivity = self.resistivity
-        lines = self.lines_to_optimize
 
-        # set resistivity for each line
-        for line, res in zip(lines, resistivity):
-            line.resistivity = res
+        self.line.set_resistivity_tensor(self.resistivity)  # update resistivity
 
-        # compute partial voltages for each line
-        for _ in range(5):
-            for line in reversed(lines):
-                line.compute_partial_voltages()  # TODO: define qnty of iterations in case of nested lines (see default)
+        compute_partial_voltages(self.line, iterations=5)
 
-        voltage_drop = []
+        dux = self.line.get_residual_voltage_tensor()  # compute residual voltage
 
-        # calculate voltage drop for each line
-        for line in lines:
-            dux = line.v_nominal - line.get_dUx()  # calc voltage drop on actual line
-            voltage_drop_percent = (1 - (dux / self._v_nominal)) * 100  # convert to %
-            voltage_drop.append(voltage_drop_percent)
+        voltage_drop_percent = (1 - (dux / self.line['v_nominal'])) * 100  # convert to %
 
-        return torch.stack(voltage_drop, dim=0)
+        return voltage_drop_percent
 
 
 class Network:
@@ -82,7 +82,7 @@ class Network:
 
         model = NetworkOptimizer(line)  # create model
 
-        target_data = torch.full_like(resistivity_t, fill_value=max_v_drop)  # voltage drop in %
+        target_data = torch.full_like(resistivity_t, fill_value=max_v_drop)  # compute loss on voltage drop in %
         losses = []
 
         criterion = nn.MSELoss()  # mean square error
@@ -108,8 +108,12 @@ class Network:
             if (epoch + 1) % (epochs / 10) == 0:
                 print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item()}')
 
+            if loss.item() < 1e-3:
+                break
+
         # print results
         print(f'Predictions: {predictions}')
+        print(f'Resulting resistivity: {model.resistivity}')
 
         # plot the loss
         plt.plot(losses)
