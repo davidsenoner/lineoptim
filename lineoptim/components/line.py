@@ -19,6 +19,15 @@ def get_line_names(list_of_dicts):
     return [item['name'] for item in list_of_dicts if item.get('is_line')]
 
 
+def get_current(load):
+    if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
+        return load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
+    elif len(load['loads']) > 0:
+        return sum(get_current(sub_load) for sub_load in load['loads'])
+    else:
+        return 0.0
+
+
 def tensor_to_list(obj):
     if isinstance(obj, torch.Tensor):
         return obj.tolist()  # Tensor in Liste umwandeln
@@ -42,6 +51,69 @@ def list_to_tensor(obj):
         return {key: list_to_tensor(value) for key, value in obj.items()}  # Funktion auf Wörterbuchwerte anwenden
     else:
         return obj  # Objekt zurückgeben, wenn es kein Wörterbuch oder Liste ist
+
+
+def get_dUx(resistivity, reactance, loads, node_id: int = None, **kwargs):
+    """
+    Calculate delta U at node_id.
+
+    Note: execute method compute_partial_voltages() before executing this method
+
+    :param node_id: Node ID of load partial voltage to calculate. 0=first node, None=last node
+    :param loads: list of loads
+    :param resistivity: Conductor resistivity (ohm/m)
+    :param reactance: Conductor reactance (ohm/m)
+    :return: delta U at node_id
+    """
+
+    node_id = len(loads) if node_id is None else node_id + 1
+
+    current_list = torch.stack([get_current(load) for load in loads])
+
+    assert len(current_list), "No currents for calculation available"
+
+    if node_id is not None:
+        current_list[-1] += sum(
+            load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
+            for load in loads[node_id:]
+        )
+
+    Mw, Mb = 0, 0
+
+    for load, current in zip(loads[:node_id], current_list):
+        position = load['position']
+        power_factor = load['power_factor']
+        phase_shift_angle = torch.acos(torch.tensor(power_factor))
+
+        Mw += current * position * power_factor  # calc current momentum
+        Mb += current * position * torch.tan(phase_shift_angle)  # calc current reactive moment
+
+    resistivity = torch.tensor(resistivity) if not isinstance(resistivity, torch.Tensor) else resistivity
+    reactance = torch.tensor(reactance) if not isinstance(reactance, torch.Tensor) else reactance
+
+    conductor_impedance = (resistivity / 1000) + 1j * reactance
+    current_moment = Mw - 1j * Mb
+
+    return abs(conductor_impedance * current_moment)
+
+
+def compute_partial_voltages(line, iterations: int = 2, **kwargs) -> None:
+    """
+    Computes all partial voltages by iterating over the nodes multiple times (param: iteration).
+    Note: In case of nested line increase iterations count
+    :param iterations: iterations for node partial voltages optimization
+    :param line: line configuration
+    :return: None
+    """
+
+    # recompute partial voltages
+    for _ in range(iterations):
+        for node_id, load in enumerate(line['loads']):
+            drop_voltage = line['v_nominal'] - get_dUx(node_id=node_id, **line)
+            load["v_nominal"] = drop_voltage.detach()
+
+            if load.get('loads'):
+                compute_partial_voltages(load, iterations=iterations)
 
 
 class Line:
@@ -126,19 +198,19 @@ class Line:
         """
         Get resistivity tensor representing resistivity of each core for each load
         Note: Resistivity tensor is a 2D tensor with shape (n_loads, n_cores)
-        :return: Resistivity tensor
         """
         lines = [self._dict['resistivity']]  # get resistivity of actual line
         lines.extend(self._get_lines_resistivity(self._dict))  # get resistivity of nested lines
 
         return torch.stack(lines)  # stack resistivity to tensor
 
+    def get_residual_voltage_tensor(self):
+        """ Get residual voltage tensor on all lines and nested lines """
+
+        return torch.stack(self._get_lines_udx(self._dict))
+
     def set_resistivity_tensor(self, resistivity: torch.Tensor) -> None:
-        """
-        Set resistivity tensor representing resistivity of each core for each load
-        :param resistivity: Resistivity tensor
-        :return: None
-        """
+        """ Set resistivity tensor representing resistivity of each core for each load """
         self._idx_set_t = 0
         self._dict['resistivity'] = resistivity[self._idx_set_t]  # set resistivity of actual line
         self._set_lines_resistivity(self._dict, resistivity)  # set resistivity of nested lines
@@ -156,6 +228,21 @@ class Line:
             if load.get('is_line'):
                 lines.append(load['resistivity'])
                 lines.extend(self._get_lines_resistivity(load))
+        return lines
+
+    def _get_lines_udx(self, line):
+        lines = []
+        #lines.append(line['loads'][-1]['v_nominal'])
+        lines.append(line['v_nominal'] - get_dUx(**line))
+        for load in line['loads']:
+            if load.get('is_line'):
+
+                sudx = self._get_lines_udx(load)
+                if len(sudx) > 0:
+                    for udx in sudx:
+                        lines.append(udx)
+
+        # stack lines if not empty
         return lines
 
     def cores_to_optimize(self):
@@ -194,14 +281,6 @@ class Line:
         for idx, load in enumerate(self._dict['loads']):
             load['idx'] = idx  # add index to load
 
-    def get_current(self, load):
-        if 'active_power' in load and 'v_nominal' in load and 'power_factor' in load:
-            return load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
-        elif len(load['loads']) > 0:
-            return sum(self.get_current(sub_load) for sub_load in load['loads'])
-        else:
-            return 0.0
-
     def get_current_by_idx(self, idx: int):
         """
         Calculate current by idx.
@@ -209,74 +288,13 @@ class Line:
         :param idx: Load index
         :return: Current in Ampere
         """
-        return self.get_current(self._dict['loads'][idx])
+        return get_current(self._dict['loads'][idx])
 
     def get_spot_current(self, idx=0):
-        return sum(self.get_current(load) for load in self._dict['loads'][idx:])
+        return sum(get_current(load) for load in self._dict['loads'][idx:])
 
-    def get_dUx(self, resistivity, reactance, loads, node_id: int = None, **kwargs):
-        """
-        Calculate delta U at node_id.
-
-        Note: execute method compute_partial_voltages() before executing this method
-
-        :param node_id: Node ID of load partial voltage to calculate. 0=first node, None=last node
-        :param loads: list of loads
-        :param resistivity: Conductor resistivity (ohm/m)
-        :param reactance: Conductor reactance (ohm/m)
-        :return: delta U at node_id
-        """
-
-        node_id = len(loads) if node_id is None else node_id + 1
-
-        current_list = torch.stack([self.get_current(load) for load in loads])
-
-        assert len(current_list), "No currents for calculation available"
-
-        if node_id is not None:
-            current_list[-1] += sum(
-                load['active_power'] / (load['v_nominal'] * np.sqrt(3) * load['power_factor'])
-                for load in loads[node_id:]
-            )
-
-        Mw, Mb = 0, 0
-
-        for load, current in zip(loads[:node_id], current_list):
-            position = load['position']
-            power_factor = load['power_factor']
-            phase_shift_angle = torch.acos(torch.tensor(power_factor))
-
-            Mw += current * position * power_factor  # calc current momentum
-            Mb += current * position * torch.tan(phase_shift_angle)  # calc current reactive moment
-
-        resistivity = torch.tensor(resistivity) if not isinstance(resistivity, torch.Tensor) else resistivity
-        reactance = torch.tensor(reactance) if not isinstance(reactance, torch.Tensor) else reactance
-
-        conductor_impedance = (resistivity / 1000) + 1j * reactance
-        current_moment = Mw - 1j * Mb
-
-        return abs(conductor_impedance * current_moment)
-
-    def compute_partial_voltages(self, line=None, iterations: int = 2, **kwargs) -> None:
-        """
-        Computes all partial voltages by iterating over the nodes multiple times (param: iteration).
-        Note: In case of nested line increase iterations count
-        :param iterations: iterations for node partial voltages optimization
-        :param line: line configuration
-        :return: None
-        """
-
-        if line is None:
-            line = self._dict
-
-        # recompute partial voltages
-        for _ in range(iterations):
-            for node_id, load in enumerate(line['loads']):
-                drop_voltage = line['v_nominal'] - self.get_dUx(node_id=node_id, **line)
-                load["v_nominal"] = drop_voltage.detach()
-
-                if load.get('loads'):
-                    self.compute_partial_voltages(load, iterations=iterations)
+    def get_total_current(self):
+        return self.get_spot_current()
 
     def save_to_json(self, filename: str):
         with open(filename, 'w') as f:
