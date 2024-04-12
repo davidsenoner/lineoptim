@@ -60,13 +60,14 @@ class Network:
         else:
             raise ValueError(f'Component type is not supported')
 
-    def optimize(self, line_idx=0, epochs: int = 200, lr: float = 0.1, max_v_drop: float = 5.0) -> None:
+    def optimize(self, line_idx=0, epochs: int = 200, lr: float = 0.01, max_v_drop: float = 5.0, auto_stop=True) -> None:
         """
         Optimize network
         :param line_idx: Line ID to optimize
         :param epochs: number of epochs
         :param lr: learning rate
         :param max_v_drop: max voltage drop in % on all lines
+        :param auto_stop: Stops optimization if loss is less than 1e-3
         :return:
         """
 
@@ -108,7 +109,7 @@ class Network:
             if (epoch + 1) % (epochs / 10) == 0:
                 print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item()}')
 
-            if loss.item() < 1e-3:
+            if auto_stop and loss.item() < 1e-3:
                 break
 
         # print results
