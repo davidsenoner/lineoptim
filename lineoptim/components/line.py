@@ -172,7 +172,7 @@ class Line:
         del self._dict[key]
 
     def __iter__(self):
-        return iter(self._dict)
+        return iter(self._dict['loads'])
 
     def __str__(self):
         return str(self._dict)
@@ -231,9 +231,7 @@ class Line:
         return lines
 
     def _get_lines_udx(self, line):
-        lines = []
-        #lines.append(line['loads'][-1]['v_nominal'])
-        lines.append(line['v_nominal'] - get_dUx(**line))
+        lines = [line['v_nominal'] - get_dUx(**line)]
         for load in line['loads']:
             if load.get('is_line'):
 
