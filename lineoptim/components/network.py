@@ -35,7 +35,6 @@ class NetworkOptimizer(nn.Module):
         print(f"Initial resistivity: {self.resistivity}")
 
     def forward(self):
-
         self.line.set_resistivity_tensor(self.resistivity)  # update resistivity
 
         compute_partial_voltages(self.line, iterations=5)
@@ -48,10 +47,27 @@ class NetworkOptimizer(nn.Module):
 
 
 class Network:
-    def __init__(self, lines=None):
-        if lines is None:
-            lines = []
-        self._lines = lines
+    def __init__(self, lines: Line | list = None):
+        self._lines = []
+
+        if lines:
+            if isinstance(lines, list):
+                for line in lines:
+                    self.add(line)
+            elif isinstance(lines, Line):
+                self.add(lines)
+
+    def __repr__(self):
+        return repr([line['name'] for line in self._lines])
+
+    def __len__(self):
+        return len(self._lines)
+
+    def __getitem__(self, idx):
+        return self._lines[idx]
+
+    def __iter__(self):
+        return iter(self._lines)
 
     def add(self, component):
 
@@ -60,7 +76,8 @@ class Network:
         else:
             raise ValueError(f'Component type is not supported')
 
-    def optimize(self, line_idx=0, epochs: int = 200, lr: float = 0.01, max_v_drop: float = 5.0, auto_stop=True) -> None:
+    def optimize(self, line_idx=0, epochs: int = 200, lr: float = 0.01, max_v_drop: float = 5.0,
+                 auto_stop=True) -> None:
         """
         Optimize network
         :param line_idx: Line ID to optimize
