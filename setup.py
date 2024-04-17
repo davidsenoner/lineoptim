@@ -14,7 +14,7 @@ def fetch_readme() -> str:
 
 setup(
     name='lineoptim',
-    version='1.1.0',
+    version='1.1.1',
     description='A line optimization package for electrical conductors.',
     author='David Senoner',
     author_email='david.senoner@gmail.com',
