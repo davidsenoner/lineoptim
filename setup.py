@@ -25,7 +25,7 @@ def fetch_requirements(path) -> List[str]:
 
 setup(
   name='lineoptim',
-  version='1.0.0',
+  version='1.1.0',
   description='A line optimization package for electrical conductors.',
   author='David Senoner',
   author_email='david.senoner@gmail.com',
