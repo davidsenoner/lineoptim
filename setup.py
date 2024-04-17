@@ -12,21 +12,6 @@ def fetch_readme() -> str:
     with open("README.md", encoding="utf-8") as f:
         return f.read()
 
-
-def fetch_requirements(path) -> List[str]:
-    """
-  This function reads the requirements file.
-
-  Args:
-      path (str): the path to the requirements file.
-
-  Returns:
-      The lines in the requirements file.
-  """
-    with open(path, "r") as fd:
-        return [r.strip() for r in fd.readlines()]
-
-
 setup(
     name='lineoptim',
     version='1.1.0',
@@ -45,7 +30,12 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
-    install_requires=fetch_requirements("requirements.txt"),
+    install_requires=[
+        "matplotlib",
+        "numpy",
+        "pandas",
+        "torch"
+    ],
     project_urls={
         "Github": "https://github.com/davidsenoner/lineoptim",
     },
