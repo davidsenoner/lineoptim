@@ -33,14 +33,21 @@ line_params = {
     "v_nominal": v_nominal,
 }
 
+# create main line
 main_line = lo.Line(**line_params)
 
+# add loads to main line
 main_line.add("Load 1", 100, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
 main_line.add("Load 2", 200, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
 main_line.add("Load 3", 300, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
 
+# create sub-line
 sub_line = lo.Line('Sub-line 1', 400, v_nominal=v_nominal, resistivity=torch.tensor([0.145, 0.145, 0.145]))
 
+# add loads to sub-line
+sub_line.add("Load 4", 410, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
+
+# add sub-line to main line
 main_line.add(**sub_line.dict())
 
 network = lo.Network()  # create network
