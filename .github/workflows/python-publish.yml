@@ -7,7 +7,6 @@
 # documentation.
 
 name: Upload Python Package
-
 on:
   release:
     types: [published]
@@ -17,9 +16,7 @@ permissions:
 
 jobs:
   deploy:
-
-    runs-on: self-hosted
-
+    runs-on: self-hoste
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python
@@ -32,8 +29,16 @@ jobs:
         pip install build
     - name: Build package
       run: python -m build
-    - name: Publish package
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: self-hosted
+    environment:
+      name: pypi
+      url: https://pypi.org/p/lineoptim
+    permissions:
+      id-token: write
+    steps:
+    # retrieve your distributions here
+
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
