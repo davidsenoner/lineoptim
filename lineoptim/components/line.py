@@ -105,15 +105,10 @@ def compute_partial_voltages(line, iterations: int = 2, **kwargs) -> None:
     :param line: line configuration
     :return: None
     """
-
-    # recompute partial voltages
     for _ in range(iterations):
         for node_id, load in enumerate(line['loads']):
-            drop_voltage = line['v_nominal'] - get_dUx(node_id=node_id, **line)
-            load["v_nominal"] = drop_voltage.detach()
-
-            if load.get('loads'):
-                compute_partial_voltages(load, iterations=iterations)
+            load["v_nominal"] = (line['v_nominal'] - get_dUx(node_id=node_id, **line)).detach()
+            compute_partial_voltages(load, iterations=iterations) if load.get('loads') else None
 
 
 class Line:
@@ -234,13 +229,7 @@ class Line:
         lines = [line['v_nominal'] - get_dUx(**line)]
         for load in line['loads']:
             if load.get('is_line'):
-
-                sudx = self._get_lines_udx(load)
-                if len(sudx) > 0:
-                    for udx in sudx:
-                        lines.append(udx)
-
-        # stack lines if not empty
+                lines.extend(self._get_lines_udx(load))
         return lines
 
     def cores_to_optimize(self):
