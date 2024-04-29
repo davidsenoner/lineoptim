@@ -76,6 +76,9 @@ class PlotGraph(Graph):
         self.line = line
         self._weight_category_qnty = 6
 
+        self.figure = plt.figure(figsize=(15, 10))
+        self.ax = self.figure.add_subplot(111)
+
     @property
     def weight_category_qnty(self):
         """ Quantity of weight categories meaning the number of different line thicknesses """
@@ -84,6 +87,10 @@ class PlotGraph(Graph):
     @weight_category_qnty.setter
     def weight_category_qnty(self, value):
         self._weight_category_qnty = value
+
+    def save(self, filename='power_line_graph.pdf'):
+        # save figure to pdf
+        self.figure.savefig(filename, format='pdf')
 
     def plot(self, line=None):
 
@@ -97,7 +104,7 @@ class PlotGraph(Graph):
 
         pos = nx.get_node_attributes(self, 'pos')
 
-        nx.draw_networkx_nodes(self, pos, node_size=1500, node_shape='o')
+        nx.draw_networkx_nodes(self, pos, node_size=1500, node_shape='o', ax=self.ax)
 
         node_labels = {
             "labels": nx.get_node_attributes(self, 'name'),
@@ -106,7 +113,7 @@ class PlotGraph(Graph):
             "font_color": "black",
         }
 
-        nx.draw_networkx_labels(self, pos, **node_labels)
+        nx.draw_networkx_labels(self, pos, ax=self.ax, **node_labels)
 
         edge_widths = {i: [] for i in range(self._weight_category_qnty)}
         for u, v, d in self.edges(data=True):
@@ -114,7 +121,7 @@ class PlotGraph(Graph):
             edge_widths[category].append((u, v))
 
         for category, edges in edge_widths.items():
-            nx.draw_networkx_edges(self, pos, edgelist=edges, width=2 * (category + 1), edge_color='grey', style='-')
+            nx.draw_networkx_edges(self, pos, edgelist=edges, width=2 * (category + 1), edge_color='grey', style='-', ax=self.ax)
 
         edge_labels = {
             "edge_labels": nx.get_edge_attributes(self, "mean_impedance"),
@@ -122,6 +129,9 @@ class PlotGraph(Graph):
             "font_family": "sans-serif",
             "font_color": "black",
         }
-        nx.draw_networkx_edge_labels(self, pos, **edge_labels)
+        nx.draw_networkx_edge_labels(self, pos, ax=self.ax, **edge_labels)
 
-        plt.show()
+        # title
+        self.ax.set_title("Power line graph", fontsize=14)  # title
+
+        self.figure.show()
