@@ -3,41 +3,118 @@ import torch
 
 from lineoptim.components import get_current, get_dUx
 
-
 class PlotData:
-    def __init__(self, line):
+    def __init__(self, line, core_names=None):
+        """
+
+        :param line: line to plot
+        :param core_names: default core names "L1", "L2", "L3", "N", "PE". Set list of names if different
+        """
+        if core_names is None:
+            core_names = ["L1", "L2", "L3", "N", "PE"]
         self.line = line
 
-    def plot(self, **kwargs):
-        fig, ax = plt.subplots(2, 2)
+        self.figure, self.ax = plt.subplots(2, 2)
 
-        core_prefix = kwargs.get("core_prefix", "L")
+        self._core_names = core_names
+        self.core_style = {
+            "L1": "brown",
+            "L2": "black",
+            "L3": "grey",
+            "N": "blue",
+            "PE": "green",
+        }
+
+    @property
+    def line(self):
+        return self._line
+
+    @line.setter
+    def line(self, value):
+        self._line = value
+
+    @property
+    def core_names(self):
+        return self._core_names
+
+    @core_names.setter
+    def core_names(self, value):
+        self._core_names = value
+
+    def plot_line_voltage(self, **kwargs):
+        """
+        Plot line voltage curve
+        Pass fig and ax if you want to plot on existing figure
+        """
+
+        plt.style.use('bmh')
+        fig, ax = plt.subplots()
+
+        fig = kwargs.get("fig", fig)
+        ax = kwargs.get("ax", ax)
+        core_names = kwargs.get("core_names", self._core_names)
 
         position = [load['position'] for load in self.line['loads']]
-        load_current = torch.stack([get_current(load) for load in self.line['loads']])
-        active_power = [load['active_power'] for load in self.line['loads']]
-        spot_current = torch.stack([self.line.get_spot_current(idx) for idx, load in enumerate(self.line['loads'])])
-        partial_voltage = torch.stack([get_dUx(**self.line.dict(), node_id=idx) for idx, load in enumerate(self.line['loads'])])
+        voltage = torch.stack([load['v_nominal'] for load in self.line['loads']])
 
-        for core in range(self.line.cores_to_optimize()):
-            # plot load current
-            ax[0, 0].plot(position, load_current[:, core], marker='o', label=f'{core_prefix}{core + 1}')
-            # plot load active power
-            ax[0, 1].plot(position, active_power, marker='o')
-            # plot spot current
-            ax[1, 0].plot(position, spot_current[:, core], marker='o', label=f'{core_prefix}{core + 1}')
-            # plot residual voltage
-            ax[1, 1].plot(position, partial_voltage[:, core], marker='o', label=f'{core_prefix}{core + 1}')
+        for core, core_name in zip(range(self.line.cores_to_optimize()), core_names):
+            ax.plot(position, voltage[:, core], marker='o', label=core_name, color=self.core_style[core_name])
 
-        ax[0, 0].set(xlabel='Position (m)', ylabel='Current (A)', title='Load current')
-        ax[0, 0].legend()
-        ax[0, 0].grid()
-        ax[0, 1].set(xlabel='Position (m)', ylabel='Active Power (W)', title='Load active power')
-        ax[0, 1].grid()
-        ax[1, 0].set(xlabel='Position (m)', ylabel='Spot Current (A)', title='Spot current')
-        ax[1, 0].legend()
-        ax[1, 0].grid()
-        ax[1, 1].set(xlabel='Position (m)', ylabel='Residual Voltage (V)', title='Partial voltage')
-        ax[1, 1].legend()
-        ax[1, 1].grid()
+        ax.set_title('Line voltage curve')
+        ax.set(xlabel='Position (m)', ylabel='Voltage (V)')
+        ax.legend(loc='upper right', ncol=3)
         fig.show()
+
+    def plot_apparent_power(self, **kwargs):
+        """
+        Plot apparent power curve
+        Pass fig and ax if you want to plot on existing figure
+        """
+
+        plt.style.use('bmh')
+        fig, ax = plt.subplots()
+
+        fig = kwargs.get("fig", fig)
+        ax = kwargs.get("ax", ax)
+
+        position = [load['position'] for load in self.line['loads']]
+        apparent_power = [load['apparent_power'] for load in self.line['loads']]
+        power_factor = [load['power_factor'] for load in self.line['loads']]
+
+        ax.stem(position, apparent_power, basefmt=" ", linefmt="-", markerfmt="o", label='Apparent power (VA)')
+
+        for pos, power, pf in zip(position, apparent_power, power_factor):
+            ax.text(pos, power, f'{power:.2f} VA\n{pf=}', fontsize=8, color='black', ha='left', va='bottom', rotation=45)
+
+        ax.set_title('Apparent power curve')
+        ax.set(xlabel='Position (m)', ylabel='Apparent power (VA)')
+        fig.show()
+
+        return fig, ax
+
+    def plot_active_power(self, **kwargs):
+        """
+        Plot active power curve
+        Pass fig and ax if you want to plot on existing figure
+        """
+
+        plt.style.use('bmh')
+        fig, ax = plt.subplots()
+
+        fig = kwargs.get("fig", fig)
+        ax = kwargs.get("ax", ax)
+
+        position = [load['position'] for load in self.line['loads']]
+        active_power = [load['active_power'] for load in self.line['loads']]
+        power_factor = [load['power_factor'] for load in self.line['loads']]
+
+        ax.stem(position, active_power, basefmt=" ", linefmt="-", markerfmt="o", label='Active power (W)')
+
+        for pos, power, pf in zip(position, active_power, power_factor):
+            ax.text(pos, power, f'{power:.2f} W\n{pf=}', fontsize=8, color='black', ha='left', va='bottom', rotation=45)
+
+        ax.set_title('Active power curve')
+        ax.set(xlabel='Position (m)', ylabel='Active power (W)')
+        fig.show()
+
+        return fig, ax
