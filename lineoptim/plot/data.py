@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import torch
 
-from lineoptim.components import get_current, get_dUx
+from lineoptim.components import get_current
+
 
 class PlotData:
     def __init__(self, line, core_names=None):
@@ -52,6 +53,11 @@ class PlotData:
         return max([max(curr) for curr in current]).item()
 
     @property
+    def mean_current(self):
+        current = [get_current(load) for load in self.line['loads']]
+        return torch.mean(torch.stack(current)).item()
+
+    @property
     def min_apparent_power(self):
         apparent_power = [load['apparent_power'] for load in self.line['loads']]
         return min(apparent_power)
@@ -62,6 +68,11 @@ class PlotData:
         return max(apparent_power)
 
     @property
+    def mean_apparent_power(self):
+        apparent_power = [load['apparent_power'] for load in self.line['loads']]
+        return torch.mean(torch.Tensor(apparent_power)).item()
+
+    @property
     def min_active_power(self):
         active_power = [load['active_power'] for load in self.line['loads']]
         return min(active_power)
@@ -70,6 +81,11 @@ class PlotData:
     def max_active_power(self):
         active_power = [load['active_power'] for load in self.line['loads']]
         return max(active_power)
+
+    @property
+    def mean_active_power(self):
+        active_power = [load['active_power'] for load in self.line['loads']]
+        return torch.mean(torch.Tensor(active_power)).item()
 
     def plot_line_voltage(self, ax=None, **kwargs):
         """
@@ -121,11 +137,12 @@ class PlotData:
         ax.stem(position, apparent_power, basefmt=" ", linefmt="-", markerfmt="o", label='Apparent power (VA)')
 
         for pos, power, pf in zip(position, apparent_power, power_factor):
-            ax.text(pos, power, f'{power:.2f} VA\n{pf=}', fontsize=8, color='black', ha='left', va='bottom', rotation=45)
+            ax.text(pos, power, f'{power:.2f} VA\n{pf=}', fontsize=8, color='black', ha='left', va='bottom',
+                    rotation=45)
 
         ax.set_title('Apparent power curve')
         ax.set(xlabel='Loads', ylabel='Apparent power (VA)')
-        ax.set_ylim(max(0, self.min_apparent_power-height), self.max_apparent_power+height)
+        ax.set_ylim(max(0, self.min_apparent_power - height), self.max_apparent_power + height)
         ax.set_xticks(position, x_ticks)
         fig.show()
 
@@ -157,7 +174,7 @@ class PlotData:
 
         ax.set_title('Active power curve')
         ax.set(xlabel='Loads', ylabel='Active power (W)')
-        ax.set_ylim(max(0, self.min_active_power-height), self.max_active_power+height)
+        ax.set_ylim(max(0, self.min_active_power - height), self.max_active_power + height)
         ax.set_xticks(position, x_ticks)
         fig.show()
 
@@ -185,14 +202,15 @@ class PlotData:
         height = (self.max_current - self.min_current) // 5 + 1
 
         for core, core_name in zip(range(self.line.cores_to_optimize()), core_names):
-            offset = (core-1) * width
+            offset = (core - 1) * width
             for pos, curr in zip(position, current):
-                ax.bar(pos+offset, curr[core], width=width, color=self.core_style[core_name])
-                ax.text(pos+offset, curr[core], f'  {core_name}={curr[core]:.2f} A', fontsize=8, color='black', ha='left', va='bottom', rotation=90)
+                ax.bar(pos + offset, curr[core], width=width, color=self.core_style[core_name])
+                ax.text(pos + offset, curr[core], f'  {core_name}={curr[core]:.2f} A', fontsize=8, color='black',
+                        ha='left', va='bottom', rotation=90)
 
         ax.set_title('Current curve')
         ax.set(xlabel='Loads', ylabel='Current (A)')
-        ax.set_ylim(max(0, self.min_current-height), self.max_current+height)
+        ax.set_ylim(max(0, self.min_current - height), self.max_current + height)
         ax.set_xticks(position, x_ticks)
         fig.show()
 
