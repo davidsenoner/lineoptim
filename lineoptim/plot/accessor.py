@@ -4,17 +4,10 @@ from collections import OrderedDict
 from lineoptim.components import Line
 
 
-class VoltageAccessor:
+class BaseAccessor:
     def __init__(self, line: Line, cores: OrderedDict):
         self._line = line
         self._cores = cores
-
-    def __repr__(self):
-        return repr(torch.stack([load['v_nominal'] for load in self._line['loads']]))
-
-    @property
-    def shape(self):
-        return torch.stack([load['v_nominal'] for load in self._line['loads']]).shape
 
     @property
     def cores(self) -> OrderedDict:
@@ -34,6 +27,18 @@ class VoltageAccessor:
 
         compute_partial_voltages(self._line, iterations=iterations)
 
+
+class VoltageAccessor(BaseAccessor):
+    def __init__(self, line: Line, cores: OrderedDict):
+        super().__init__(line, cores)
+
+    def __repr__(self):
+        return repr(torch.stack([load['v_nominal'] for load in self._line['loads']]))
+
+    @property
+    def shape(self):
+        return torch.stack([load['v_nominal'] for load in self._line['loads']]).shape
+
     def mean(self):
         """ Mean line voltage """
         val = []
@@ -46,7 +51,8 @@ class VoltageAccessor:
         """ Minimum line voltage """
         val = []
         for core_idx, core in enumerate(self._cores.keys()):
-            val.append(torch.min(torch.stack([load['v_nominal'][core_idx] for load in self._line['loads']]), dim=0).values)
+            val.append(
+                torch.min(torch.stack([load['v_nominal'][core_idx] for load in self._line['loads']]), dim=0).values)
 
         return torch.stack(val)
 
@@ -54,7 +60,8 @@ class VoltageAccessor:
         """ Maximum line voltage """
         val = []
         for core_idx, core in enumerate(self._cores.keys()):
-            val.append(torch.max(torch.stack([load['v_nominal'][core_idx] for load in self._line['loads']]), dim=0).values)
+            val.append(
+                torch.max(torch.stack([load['v_nominal'][core_idx] for load in self._line['loads']]), dim=0).values)
 
         return torch.stack(val)
 
@@ -95,25 +102,24 @@ class VoltageAccessor:
         return fig, ax
 
 
-class VoltageUnbalanceAccessor:
+class VoltageUnbalanceAccessor(BaseAccessor):
     def __init__(self, line: Line, cores: OrderedDict):
-        self._line = line
-        self._cores = cores
+        super().__init__(line, cores)
 
     def __repr__(self):
         return repr(self._calc_unbalance())
 
-    @property
-    def cores(self) -> OrderedDict:
-        return self._cores
+    def min(self):
+        return torch.min(self._calc_unbalance())
 
-    @cores.setter
-    def cores(self, cores: OrderedDict):
-        self._cores = cores
+    def max(self):
+        return torch.max(self._calc_unbalance())
 
-    @property
-    def cores_len(self) -> int:
-        return len(self._cores)
+    def mean(self):
+        return torch.mean(self._calc_unbalance())
+
+    def std(self):
+        return torch.std(self._calc_unbalance())
 
     def _calc_unbalance(self):
         """
