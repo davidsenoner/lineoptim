@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import numpy as np
 import torch
 import json
@@ -116,9 +117,10 @@ class Line:
             self,
             name,
             position,
+            cores: OrderedDict,
             resistivity=0,
             reactance=0,
-            v_nominal=400,
+            v_nominal: torch.Tensor = torch.tensor([400.0]),
             loads=None,
             **kwargs
     ):
@@ -134,6 +136,10 @@ class Line:
         if loads is None:
             loads = []
 
+            assert isinstance(cores, OrderedDict), "Cores must be an OrderedDict"
+            assert len(cores) > 0, "Cores must not be empty"
+            assert len(cores) == len(v_nominal), "Number of cores must match number of nominal voltages"
+
         # init params to dict
         self._dict = {
             'name': name,
@@ -143,7 +149,7 @@ class Line:
             'position': position,
             'loads': loads,
             'is_line': True,
-            'cores': len(v_nominal) if isinstance(v_nominal, list) or isinstance(v_nominal, torch.Tensor) else 1
+            'cores': cores
         }
         self._dict.update(kwargs)  # add additional parameters
         self._lines_to_optimize = []
@@ -189,6 +195,18 @@ class Line:
     def loads(self, value):
         self._dict['loads'] = value
 
+    @property
+    def voltage(self):
+        """ Voltage in Volt """
+        from lineoptim.plot.accessor import VoltageAccessor
+        return VoltageAccessor(self, self._dict['cores'])
+
+    @property
+    def voltage_unbalance(self):
+        """ Voltage unbalance in % """
+        from lineoptim.plot.accessor import VoltageUnbalanceAccessor
+        return VoltageUnbalanceAccessor(self, self._dict['cores'])
+
     def get_resistivity_tensor(self) -> torch.Tensor:
         """
         Get resistivity tensor representing resistivity of each core for each load
@@ -232,10 +250,6 @@ class Line:
                 lines.extend(self._get_lines_udx(load))
         return lines
 
-    def cores_to_optimize(self):
-        """ Get number of cores to optimize """
-        return self.get_resistivity_tensor().shape[1]  # get number of cores
-
     def loads_to_optimize(self):
         """ Get number of loads to optimize """
         return self.get_resistivity_tensor().shape[0]  # get number of loads
@@ -261,7 +275,7 @@ class Line:
         else:
             raise ValueError('No active power and power factor defined. Check your load definition.')
 
-        load['cores'] = load.get('cores', len(load['v_nominal']))  # add cores information
+        load['cores'] = load.get('cores', None)  # add cores information
         self._dict['loads'].append(load)
         self._dict['loads'] = sorted(self._dict['loads'], key=lambda x: x['position'])  # sort loads by position
 
