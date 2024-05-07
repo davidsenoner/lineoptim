@@ -36,7 +36,7 @@ class NetworkOptimizer(nn.Module):
     def forward(self):
         self.line.set_resistivity_tensor(self.resistivity)  # update resistivity
 
-        compute_partial_voltages(self.line, iterations=2)
+        self.line.recompute()  # recompute partial voltages
 
         dux = self.line.get_residual_voltage_tensor()  # compute residual voltage
 
