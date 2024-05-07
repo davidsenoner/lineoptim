@@ -197,18 +197,28 @@ class Line:
 
     @property
     def voltage(self):
-        """ Voltage in Volt """
+        """
+        Voltage in Volt
+        :return: Voltage list of all nodes on Line (nested lines not included)
+        """
         from lineoptim.plot.accessor import VoltageAccessor
         return VoltageAccessor(self, self._dict['cores'])
 
     @property
     def voltage_unbalance(self):
-        """ Voltage unbalance in % """
+        """
+        Voltage unbalance in %
+        :return: Voltage unbalance list of all nodes on Line (nested lines not included)
+        """
         from lineoptim.plot.accessor import VoltageUnbalanceAccessor
         return VoltageUnbalanceAccessor(self, self._dict['cores'])
 
-    def recompute(self, iterations=2):
-        """ Recompute partial voltages """
+    def recompute(self, iterations=2) -> None:
+        """
+        Recompute partial voltages
+        :param iterations: Number of iterations, increase for more accurate results
+        :return: None
+        """
         compute_partial_voltages(self, iterations=iterations)
 
     def get_resistivity_tensor(self) -> torch.Tensor:
@@ -253,10 +263,6 @@ class Line:
             if load.get('is_line'):
                 lines.extend(self._get_lines_udx(load))
         return lines
-
-    def loads_to_optimize(self):
-        """ Get number of loads to optimize """
-        return self.get_resistivity_tensor().shape[0]  # get number of loads
 
     def add(self, name: str, position: float, **kwargs) -> None:
         """
