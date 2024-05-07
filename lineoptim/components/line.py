@@ -207,6 +207,10 @@ class Line:
         from lineoptim.plot.accessor import VoltageUnbalanceAccessor
         return VoltageUnbalanceAccessor(self, self._dict['cores'])
 
+    def recompute(self, iterations=2):
+        """ Recompute partial voltages """
+        compute_partial_voltages(self, iterations=iterations)
+
     def get_resistivity_tensor(self) -> torch.Tensor:
         """
         Get resistivity tensor representing resistivity of each core for each load
