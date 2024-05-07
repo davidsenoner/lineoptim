@@ -205,6 +205,15 @@ class Line:
         return VoltageAccessor(self, self._dict['cores'])
 
     @property
+    def current(self):
+        """
+        Current in Ampere
+        :return: Current list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.accessor import CurrentAccessor
+        return CurrentAccessor(self, self._dict['cores'])
+
+    @property
     def voltage_unbalance(self):
         """
         Voltage unbalance in %
