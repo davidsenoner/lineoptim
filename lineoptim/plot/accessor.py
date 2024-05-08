@@ -4,6 +4,7 @@ from collections import OrderedDict
 from lineoptim.components import Line
 from lineoptim.components import get_current
 
+
 class BaseAccessor:
     def __init__(self, line: Line, cores: OrderedDict):
         self._line = line
@@ -34,6 +35,15 @@ class VoltageAccessor(BaseAccessor):
 
     def __repr__(self):
         return repr(torch.stack([load['v_nominal'] for load in self._line['loads']]))
+
+    def __getitem__(self, index):
+        sel = self._line['loads'][index]
+        if isinstance(sel, dict):
+            return sel['v_nominal']
+        elif isinstance(sel, list):
+            return torch.stack([load['v_nominal'] for load in sel])
+        else:
+            raise ValueError('Invalid index')
 
     @property
     def shape(self):
@@ -109,6 +119,15 @@ class SumCurrentAccessor(BaseAccessor):
     def __repr__(self):
         return repr(torch.stack([self._line.get_spot_current(idx) for idx in range(len(self._line['loads']))]))
 
+    def __getitem__(self, index):
+        sel = self._line['loads'][index]
+        if isinstance(sel, dict):
+            return self._line.get_spot_current(index)
+        elif isinstance(sel, list):
+            return torch.stack([self._line.get_spot_current(idx) for idx in range(len(sel))])
+        else:
+            raise ValueError('Invalid index')
+
     def min(self):
         return torch.min(torch.stack([self._line.get_spot_current(idx) for idx in range(len(self._line['loads']))]))
 
@@ -159,6 +178,15 @@ class CurrentAccessor(BaseAccessor):
     def __repr__(self):
         return repr(torch.stack([get_current(load) for load in self._line['loads']]))
 
+    def __getitem__(self, index):
+        sel = self._line['loads'][index]
+        if isinstance(sel, dict):
+            return get_current(sel)
+        elif isinstance(sel, list):
+            return torch.stack([get_current(load) for load in sel])
+        else:
+            raise ValueError('Invalid index')
+
     def min(self):
         return torch.min(torch.stack([get_current(load) for load in self._line['loads']]))
 
@@ -208,6 +236,15 @@ class VoltageUnbalanceAccessor(BaseAccessor):
 
     def __repr__(self):
         return repr(self._calc_unbalance())
+
+    def __getitem__(self, index):
+        sel = self._line['loads'][index]
+        if isinstance(sel, dict):
+            return self._calc_unbalance()[index]
+        elif isinstance(sel, list):
+            return torch.stack([self._calc_unbalance()[idx] for idx in range(len(sel))])
+        else:
+            raise ValueError('Invalid index')
 
     def min(self):
         return torch.min(self._calc_unbalance())
@@ -268,6 +305,15 @@ class CurrentUnbalanceAccessor(BaseAccessor):
 
     def __repr__(self):
         return repr(self._calc_unbalance())
+
+    def __getitem__(self, index):
+        sel = self._line['loads'][index]
+        if isinstance(sel, dict):
+            return self._calc_unbalance()[index]
+        elif isinstance(sel, list):
+            return torch.stack([self._calc_unbalance()[idx] for idx in range(len(sel))])
+        else:
+            raise ValueError('Invalid index')
 
     def min(self):
         return torch.min(self._calc_unbalance())
