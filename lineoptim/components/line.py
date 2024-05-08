@@ -196,35 +196,52 @@ class Line:
         self._dict['loads'] = value
 
     @property
+    def cores(self) -> OrderedDict:
+        return self._dict['cores']
+
+    @cores.setter
+    def cores(self, value: OrderedDict):
+        self._dict['cores'] = value
+
+    @property
     def voltage(self):
         """
         Voltage in Volt
         :return: Voltage list of all nodes on Line (nested lines not included)
         """
         from lineoptim.plot.accessor import VoltageAccessor
-        return VoltageAccessor(self, self._dict['cores'])
+        return VoltageAccessor(self, self.cores)
 
     @property
     def current(self):
         """
         Current in Ampere
-        :return: Current list of all nodes on Line (nested lines not included)
+        :return: Current on conductor at each node on conductor (nested lines not included)
         """
         from lineoptim.plot.accessor import CurrentAccessor
-        return CurrentAccessor(self, self._dict['cores'])
+        return CurrentAccessor(self, self.cores)
 
     @property
     def voltage_unbalance(self):
         """
-        Voltage unbalance in %
+        Voltage unbalance in % using NEMA definition
         :return: Voltage unbalance list of all nodes on Line (nested lines not included)
         """
         from lineoptim.plot.accessor import VoltageUnbalanceAccessor
-        return VoltageUnbalanceAccessor(self, self._dict['cores'])
+        return VoltageUnbalanceAccessor(self, self.cores)
+
+    @property
+    def current_unbalance(self):
+        """
+        Current unbalance in % using NEMA definition
+        :return: Current unbalance list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.accessor import CurrentUnbalanceAccessor
+        return CurrentUnbalanceAccessor(self, self.cores)
 
     def recompute(self, iterations=2) -> None:
         """
-        Recompute partial voltages
+        Recompute partial voltages by taking all nodes and nested lines into account
         :param iterations: Number of iterations, increase for more accurate results
         :return: None
         """

@@ -102,66 +102,6 @@ class VoltageAccessor(BaseAccessor):
         return fig, ax
 
 
-class VoltageUnbalanceAccessor(BaseAccessor):
-    def __init__(self, line: Line, cores: OrderedDict):
-        super().__init__(line, cores)
-
-    def __repr__(self):
-        return repr(self._calc_unbalance())
-
-    def min(self):
-        return torch.min(self._calc_unbalance())
-
-    def max(self):
-        return torch.max(self._calc_unbalance())
-
-    def mean(self):
-        return torch.mean(self._calc_unbalance())
-
-    def std(self):
-        return torch.std(self._calc_unbalance())
-
-    def _calc_unbalance(self):
-        """
-        Calculate voltage unbalance using NEMA definition
-        Note: This equation is not taking phase angles in account.
-        TODO: implement IEC definition or True definition
-        """
-        assert self.cores_len == 3, 'Voltage unbalance is supported only for 3-phase systems'
-        voltages = torch.stack([load['v_nominal'] for load in self._line['loads']])
-        # mean voltages
-        mean = torch.mean(voltages, dim=1)
-        # max deviation from mean
-        max_deviation = torch.max(torch.abs(voltages - mean.unsqueeze(1)), dim=1).values
-        # voltage unbalance
-        return max_deviation / mean * 100
-
-    def plot(self, ax=None):
-        """ Voltage unbalance """
-        assert self.cores_len == 3, 'Voltage unbalance is supported only for 3-phase systems'
-        import matplotlib.pyplot as plt
-
-        plt.style.use('bmh')
-        fig = plt.figure()
-
-        if ax is None:
-            ax = fig.add_subplot(111)
-
-        position = [load['position'] for load in self._line['loads']]
-        x_ticks = [f'{load["name"]}\n{load["position"]}m' for load in self._line['loads']]
-        unbalance = self._calc_unbalance()
-
-        ax.plot(position, unbalance, marker='o', label='Voltage unbalance', color='black')
-
-        ax.set_title('Line Voltage Unbalance curve')
-        ax.set(xlabel='Loads', ylabel='Voltage Unbalance (%)')
-        ax.set_xticks(position, x_ticks)
-        ax.legend(loc='upper right', ncol=3)
-        fig.show()
-
-        return fig, ax
-
-
 class CurrentAccessor(BaseAccessor):
     def __init__(self, line: Line, cores: OrderedDict):
         super().__init__(line, cores)
@@ -205,6 +145,128 @@ class CurrentAccessor(BaseAccessor):
 
         ax.set_title('Spot current curve')
         ax.set(xlabel='Loads', ylabel='Current (A)')
+        ax.set_xticks(position, x_ticks)
+        ax.legend(loc='upper right', ncol=3)
+        fig.show()
+
+        return fig, ax
+
+
+class VoltageUnbalanceAccessor(BaseAccessor):
+    def __init__(self, line: Line, cores: OrderedDict):
+        super().__init__(line, cores)
+
+    def __repr__(self):
+        return repr(self._calc_unbalance())
+
+    def min(self):
+        return torch.min(self._calc_unbalance())
+
+    def max(self):
+        return torch.max(self._calc_unbalance())
+
+    def mean(self):
+        return torch.mean(self._calc_unbalance())
+
+    def std(self):
+        return torch.std(self._calc_unbalance())
+
+    def _calc_unbalance(self):
+        """
+        Calculate voltage unbalance using NEMA definition
+        Note: This equation is not taking phase angles into account.
+        TODO: implement IEC definition or True definition
+        """
+        assert self.cores_len == 3, 'Voltage unbalance is supported only for 3-phase systems'
+        voltages = torch.stack([load['v_nominal'] for load in self._line['loads']])
+        # mean voltages
+        mean = torch.mean(voltages, dim=1)
+        # max deviation from mean
+        max_deviation = torch.max(torch.abs(voltages - mean.unsqueeze(1)), dim=1).values
+        # voltage unbalance
+        return max_deviation / mean * 100
+
+    def plot(self, ax=None):
+        """ Voltage unbalance """
+        assert self.cores_len == 3, 'Voltage unbalance is supported only for 3-phase systems'
+        import matplotlib.pyplot as plt
+
+        plt.style.use('bmh')
+        fig = plt.figure()
+
+        if ax is None:
+            ax = fig.add_subplot(111)
+
+        position = [load['position'] for load in self._line['loads']]
+        x_ticks = [f'{load["name"]}\n{load["position"]}m' for load in self._line['loads']]
+        unbalance = self._calc_unbalance()
+
+        ax.plot(position, unbalance, marker='o', label='Voltage unbalance', color='black')
+
+        ax.set_title('Load Voltage Unbalance curve')
+        ax.set(xlabel='Loads', ylabel='Voltage Unbalance (%)')
+        ax.set_xticks(position, x_ticks)
+        ax.legend(loc='upper right', ncol=3)
+        fig.show()
+
+        return fig, ax
+
+
+class CurrentUnbalanceAccessor(BaseAccessor):
+    def __init__(self, line: Line, cores: OrderedDict):
+        super().__init__(line, cores)
+
+    def __repr__(self):
+        return repr(self._calc_unbalance())
+
+    def min(self):
+        return torch.min(self._calc_unbalance())
+
+    def max(self):
+        return torch.max(self._calc_unbalance())
+
+    def mean(self):
+        return torch.mean(self._calc_unbalance())
+
+    def std(self):
+        return torch.std(self._calc_unbalance())
+
+    def _calc_unbalance(self):
+        """
+        Calculate current unbalance using NEMA definition
+        Note: This equation is not taking phase angles into account.
+        TODO: implement IEC definition or True definition
+                """
+        assert self.cores_len == 3, 'Current unbalance is supported only for 3-phase systems'
+        from lineoptim.components import get_current
+        currents = torch.stack([get_current(load) for load in self._line['loads']])
+        # mean voltages
+        mean = torch.mean(currents, dim=1)
+        # max deviation from mean
+        max_deviation = torch.max(torch.abs(currents - mean.unsqueeze(1)), dim=1).values
+        # voltage unbalance
+        return max_deviation / mean * 100
+
+    def plot(self, ax=None):
+        """ Current unbalance """
+        assert self.cores_len == 3, 'Current unbalance is supported only for 3-phase systems'
+        import matplotlib.pyplot as plt
+
+        plt.style.use('bmh')
+        fig = plt.figure()
+
+        if ax is None:
+            ax = fig.add_subplot(111)
+
+        position = [load['position'] for load in self._line['loads']]
+        x_ticks = [f'{load["name"]}\n{load["position"]}m' for load in self._line['loads']
+                   if 'position' in load.keys()]
+        unbalance = self._calc_unbalance()
+
+        ax.plot(position, unbalance, marker='o', label='Current unbalance', color='black')
+
+        ax.set_title('Load Current Unbalance curve')
+        ax.set(xlabel='Loads', ylabel='Current Unbalance (%)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
         fig.show()
