@@ -248,6 +248,15 @@ class Line:
         from lineoptim.plot.accessor import CurrentUnbalanceAccessor
         return CurrentUnbalanceAccessor(self, self.cores)
 
+    @property
+    def apparent_power(self):
+        """
+        Apparent power in VA
+        :return: Apparent power list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.accessor import ApparentPowerAccessor
+        return ApparentPowerAccessor(self, self.cores)
+
     def recompute(self, iterations=2) -> None:
         """
         Recompute partial voltages by taking all nodes and nested lines into account
@@ -326,15 +335,6 @@ class Line:
 
         for idx, load in enumerate(self._dict['loads']):
             load['idx'] = idx  # add index to load
-
-    def get_current_by_idx(self, idx: int):
-        """
-        Calculate current by idx.
-        Note: Current corresponds to the current of selected node_id.
-        :param idx: Load index
-        :return: Current in Ampere
-        """
-        return get_current(self._dict['loads'][idx])
 
     def get_spot_current(self, idx=0):
         return sum(get_current(load) for load in self._dict['loads'][idx:])

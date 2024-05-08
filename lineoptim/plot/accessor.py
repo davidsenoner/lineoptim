@@ -28,6 +28,14 @@ class BaseAccessor:
 
         compute_partial_voltages(self._line, iterations=iterations)
 
+    @property
+    def line(self) -> Line:
+        return self._line
+
+    @line.setter
+    def line(self, line: Line):
+        self._line = line
+
 
 class VoltageAccessor(BaseAccessor):
     def __init__(self, line: Line, cores: OrderedDict):
@@ -37,12 +45,13 @@ class VoltageAccessor(BaseAccessor):
         return repr(torch.stack([load['v_nominal'] for load in self._line['loads']]))
 
     def __getitem__(self, index):
-        sel = self._line['loads'][index]
-        if isinstance(sel, dict):
-            return sel['v_nominal']
-        elif isinstance(sel, list):
-            return torch.stack([load['v_nominal'] for load in sel])
-        else:
+        try:
+            sel = self._line['loads'][index]
+            if isinstance(sel, dict):
+                return sel['v_nominal']
+            elif isinstance(sel, list):
+                return torch.stack([load['v_nominal'] for load in sel])
+        except TypeError:
             raise ValueError('Invalid index')
 
     @property
@@ -120,25 +129,30 @@ class SumCurrentAccessor(BaseAccessor):
         return repr(torch.stack([self._line.get_spot_current(idx) for idx in range(len(self._line['loads']))]))
 
     def __getitem__(self, index):
-        sel = self._line['loads'][index]
-        if isinstance(sel, dict):
-            return self._line.get_spot_current(index)
-        elif isinstance(sel, list):
-            return torch.stack([self._line.get_spot_current(idx) for idx in range(len(sel))])
-        else:
+        try:
+            sel = self._line['loads'][index]
+            if isinstance(sel, dict):
+                return self._line.get_spot_current(index)
+            elif isinstance(sel, list):
+                return torch.stack([self._line.get_spot_current(idx) for idx in range(len(sel))])
+        except TypeError:
             raise ValueError('Invalid index')
 
     def min(self):
-        return torch.min(torch.stack([self._line.get_spot_current(idx) for idx in range(len(self._line['loads']))]))
+        num_loads = len(self._line['loads'])
+        return torch.min(torch.stack([self._line.get_spot_current(idx) for idx in range(num_loads)]))
 
     def max(self):
-        return torch.max(torch.stack([self._line.get_spot_current(idx) for idx in range(len(self._line['loads']))]))
+        num_loads = len(self._line['loads'])
+        return torch.max(torch.stack([self._line.get_spot_current(idx) for idx in range(num_loads)]))
 
     def mean(self):
-        return torch.mean(torch.stack([self._line.get_spot_current(idx) for idx in range(len(self._line['loads']))]))
+        num_loads = len(self._line['loads'])
+        return torch.mean(torch.stack([self._line.get_spot_current(idx) for idx in range(num_loads)]))
 
     def std(self):
-        return torch.std(torch.stack([self._line.get_spot_current(idx) for idx in range(len(self._line['loads']))]))
+        num_loads = len(self._line['loads'])
+        return torch.std(torch.stack([self._line.get_spot_current(idx) for idx in range(num_loads)]))
 
     def plot(self, ax=None):
         """
@@ -179,25 +193,50 @@ class CurrentAccessor(BaseAccessor):
         return repr(torch.stack([get_current(load) for load in self._line['loads']]))
 
     def __getitem__(self, index):
-        sel = self._line['loads'][index]
-        if isinstance(sel, dict):
-            return get_current(sel)
-        elif isinstance(sel, list):
-            return torch.stack([get_current(load) for load in sel])
-        else:
+        try:
+            sel = self._line['loads'][index]
+            if isinstance(sel, dict):
+                return get_current(sel)
+            elif isinstance(sel, list):
+                return torch.stack([get_current(load) for load in sel])
+        except TypeError:
             raise ValueError('Invalid index')
 
+    @property
+    def shape(self):
+        return torch.stack([get_current(load) for load in self._line['loads']]).shape
+
     def min(self):
-        return torch.min(torch.stack([get_current(load) for load in self._line['loads']]))
+        """ Max line current """
+        val = []
+        for core_idx, core in enumerate(self._cores.keys()):
+            val.append(torch.min(torch.stack([get_current(load)[core_idx] for load in self._line['loads']])))
+
+        return torch.stack(val)
 
     def max(self):
-        return torch.max(torch.stack([get_current(load) for load in self._line['loads']]))
+        """ Max line current """
+        val = []
+        for core_idx, core in enumerate(self._cores.keys()):
+            val.append(torch.max(torch.stack([get_current(load)[core_idx] for load in self._line['loads']])))
+
+        return torch.stack(val)
 
     def mean(self):
-        return torch.mean(torch.stack([get_current(load) for load in self._line['loads']]))
+        """ Mean line current """
+        val = []
+        for core_idx, core in enumerate(self._cores.keys()):
+            val.append(torch.mean(torch.stack([get_current(load)[core_idx] for load in self._line['loads']])))
+
+        return torch.stack(val)
 
     def std(self):
-        return torch.std(torch.stack([get_current(load) for load in self._line['loads']]))
+        """ Max line current """
+        val = []
+        for core_idx, core in enumerate(self._cores.keys()):
+            val.append(torch.std(torch.stack([get_current(load)[core_idx] for load in self._line['loads']])))
+
+        return torch.stack(val)
 
     def plot(self, ax=None):
         """
@@ -238,12 +277,13 @@ class VoltageUnbalanceAccessor(BaseAccessor):
         return repr(self._calc_unbalance())
 
     def __getitem__(self, index):
-        sel = self._line['loads'][index]
-        if isinstance(sel, dict):
-            return self._calc_unbalance()[index]
-        elif isinstance(sel, list):
-            return torch.stack([self._calc_unbalance()[idx] for idx in range(len(sel))])
-        else:
+        try:
+            sel = self._line['loads'][index]
+            if isinstance(sel, dict):
+                return self._calc_unbalance()[index]
+            elif isinstance(sel, list):
+                return torch.stack([self._calc_unbalance()[idx] for idx in range(len(sel))])
+        except TypeError:
             raise ValueError('Invalid index')
 
     def min(self):
@@ -307,12 +347,13 @@ class CurrentUnbalanceAccessor(BaseAccessor):
         return repr(self._calc_unbalance())
 
     def __getitem__(self, index):
-        sel = self._line['loads'][index]
-        if isinstance(sel, dict):
-            return self._calc_unbalance()[index]
-        elif isinstance(sel, list):
-            return torch.stack([self._calc_unbalance()[idx] for idx in range(len(sel))])
-        else:
+        try:
+            sel = self._line['loads'][index]
+            if isinstance(sel, dict):
+                return self._calc_unbalance()[index]
+            elif isinstance(sel, list):
+                return torch.stack([self._calc_unbalance()[idx] for idx in range(len(sel))])
+        except TypeError:
             raise ValueError('Invalid index')
 
     def min(self):
@@ -362,6 +403,65 @@ class CurrentUnbalanceAccessor(BaseAccessor):
 
         ax.set_title('Load Current Unbalance curve')
         ax.set(xlabel='Loads', ylabel='Current Unbalance (%)')
+        ax.set_xticks(position, x_ticks)
+        ax.legend(loc='upper right', ncol=3)
+        fig.show()
+
+        return fig, ax
+
+
+class ApparentPowerAccessor(BaseAccessor):
+    def __init__(self, line: Line, cores: OrderedDict):
+        super().__init__(line, cores)
+
+    def __repr__(self):
+        return repr(torch.tensor([load['apparent_power'] for load in self._line['loads']]))
+
+    def __getitem__(self, index):
+        try:
+            sel = self._line['loads'][index]
+            if isinstance(sel, dict):
+                return torch.tensor(sel['apparent_power'])
+            else:
+                return torch.tensor([load['apparent_power'] for load in sel])
+        except TypeError:
+            raise ValueError('Invalid index')
+
+    def min(self):
+        return torch.tensor([load['apparent_power'] for load in self._line['loads']]).min()
+
+    def max(self):
+        return torch.tensor([load['apparent_power'] for load in self._line['loads']]).max()
+
+    def mean(self):
+        return torch.tensor([load['apparent_power'] for load in self._line['loads']]).mean()
+
+    def std(self):
+        return torch.tensor([load['apparent_power'] for load in self._line['loads']]).std()
+
+    def plot(self, ax=None):
+        """
+        Plot apparent power curve
+        Pass fig and ax if you want to plot on existing figure
+        """
+        import matplotlib.pyplot as plt
+
+        plt.style.use('bmh')
+        fig = plt.figure()
+
+        if ax is None:
+            ax = fig.add_subplot(111)
+
+        position = [load['position'] for load in self._line['loads']]
+        x_ticks = [f'{load["name"]}\n{load["position"]}m' for load in self._line['loads']
+                   if 'position' in load.keys()]
+
+        apparent_power = [load['apparent_power'] for load in self._line['loads']]
+
+        ax.plot(position, apparent_power, marker='o', label='Apparent power', color='black')
+
+        ax.set_title('Apparent power curve')
+        ax.set(xlabel='Loads', ylabel='Apparent power (VA)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
         fig.show()
