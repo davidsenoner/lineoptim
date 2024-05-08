@@ -2,7 +2,7 @@ import torch
 from collections import OrderedDict
 
 from lineoptim.components import Line
-
+from lineoptim.components import get_current
 
 class BaseAccessor:
     def __init__(self, line: Line, cores: OrderedDict):
@@ -102,7 +102,7 @@ class VoltageAccessor(BaseAccessor):
         return fig, ax
 
 
-class CurrentAccessor(BaseAccessor):
+class SumCurrentAccessor(BaseAccessor):
     def __init__(self, line: Line, cores: OrderedDict):
         super().__init__(line, cores)
 
@@ -144,6 +144,56 @@ class CurrentAccessor(BaseAccessor):
             ax.plot(position, spot_current[:, core_idx], marker='o', label=core, color=self._cores[core])
 
         ax.set_title('Spot current curve')
+        ax.set(xlabel='Loads', ylabel='Current (A)')
+        ax.set_xticks(position, x_ticks)
+        ax.legend(loc='upper right', ncol=3)
+        fig.show()
+
+        return fig, ax
+
+
+class CurrentAccessor(BaseAccessor):
+    def __init__(self, line: Line, cores: OrderedDict):
+        super().__init__(line, cores)
+
+    def __repr__(self):
+        return repr(torch.stack([get_current(load) for load in self._line['loads']]))
+
+    def min(self):
+        return torch.min(torch.stack([get_current(load) for load in self._line['loads']]))
+
+    def max(self):
+        return torch.max(torch.stack([get_current(load) for load in self._line['loads']]))
+
+    def mean(self):
+        return torch.mean(torch.stack([get_current(load) for load in self._line['loads']]))
+
+    def std(self):
+        return torch.std(torch.stack([get_current(load) for load in self._line['loads']]))
+
+    def plot(self, ax=None):
+        """
+        Plot spot current curve
+        Pass fig and ax if you want to plot on existing figure
+        """
+        import matplotlib.pyplot as plt
+
+        plt.style.use('bmh')
+        fig = plt.figure()
+
+        if ax is None:
+            ax = fig.add_subplot(111)
+
+        position = [load['position'] for load in self._line['loads']]
+        x_ticks = [f'{load["name"]}\n{load["position"]}m' for load in self._line['loads']
+                   if 'position' in load.keys()]
+
+        current = torch.stack([get_current(load) for load in self._line['loads']])
+
+        for core_idx, core in enumerate(self._cores.keys()):
+            ax.plot(position, current[:, core_idx], marker='o', label=core, color=self._cores[core])
+
+        ax.set_title('Load current curve')
         ax.set(xlabel='Loads', ylabel='Current (A)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
@@ -238,7 +288,6 @@ class CurrentUnbalanceAccessor(BaseAccessor):
         TODO: implement IEC definition or True definition
                 """
         assert self.cores_len == 3, 'Current unbalance is supported only for 3-phase systems'
-        from lineoptim.components import get_current
         currents = torch.stack([get_current(load) for load in self._line['loads']])
         # mean voltages
         mean = torch.mean(currents, dim=1)

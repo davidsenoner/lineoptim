@@ -215,11 +215,20 @@ class Line:
     @property
     def current(self):
         """
-        Current in Ampere
+        Conductor Current in Ampere. Loads that follow are summed up.
         :return: Current on conductor at each node on conductor (nested lines not included)
         """
         from lineoptim.plot.accessor import CurrentAccessor
         return CurrentAccessor(self, self.cores)
+
+    @property
+    def current_sum(self):
+        """
+        Conductor Current in Ampere. Loads that follow are summed up.
+        :return: Current on conductor at each node on conductor (nested lines not included)
+        """
+        from lineoptim.plot.accessor import SumCurrentAccessor
+        return SumCurrentAccessor(self, self.cores)
 
     @property
     def voltage_unbalance(self):
