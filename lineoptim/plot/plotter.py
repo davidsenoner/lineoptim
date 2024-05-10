@@ -116,7 +116,6 @@ class VoltagePlotter(BasePlotter):
         ax.set(xlabel='Loads', ylabel='Voltage (V)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
-        fig.show()
 
         return fig, ax
 
@@ -176,11 +175,10 @@ class SumCurrentPlotter(BasePlotter):
         for core_idx, core in enumerate(self._cores.keys()):
             ax.plot(position, spot_current[:, core_idx], marker='o', label=core, color=self._cores[core])
 
-        ax.set_title('Spot current curve')
+        ax.set_title('Sum current curve')
         ax.set(xlabel='Loads', ylabel='Current (A)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
-        fig.show()
 
         return fig, ax
 
@@ -264,7 +262,6 @@ class CurrentPlotter(BasePlotter):
         ax.set(xlabel='Loads', ylabel='Current (A)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
-        fig.show()
 
         return fig, ax
 
@@ -334,7 +331,6 @@ class VoltageUnbalancePlotter(BasePlotter):
         ax.set(xlabel='Loads', ylabel='Voltage Unbalance (%)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
-        fig.show()
 
         return fig, ax
 
@@ -405,7 +401,6 @@ class CurrentUnbalancePlotter(BasePlotter):
         ax.set(xlabel='Loads', ylabel='Current Unbalance (%)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
-        fig.show()
 
         return fig, ax
 
@@ -464,7 +459,6 @@ class ApparentPowerPlotter(BasePlotter):
         ax.set(xlabel='Loads', ylabel='Apparent power (VA)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
-        fig.show()
 
         return fig, ax
 
@@ -523,6 +517,5 @@ class ActivePowerPlotter(BasePlotter):
         ax.set(xlabel='Loads', ylabel='Active power (W)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
-        fig.show()
 
         return fig, ax
