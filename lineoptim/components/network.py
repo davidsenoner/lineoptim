@@ -133,7 +133,9 @@ class Network:
         print(f'Resulting resistivity: {model.resistivity}')
 
         # plot the loss
-        plt.plot(losses)
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.show()
+        fig, ax = plt.subplots()
+        fig.suptitle('Optimization loss')
+        ax.plot(losses)
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Loss')
+        fig.show()
