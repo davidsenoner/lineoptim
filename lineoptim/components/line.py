@@ -209,8 +209,8 @@ class Line:
         Voltage in Volt
         :return: Voltage list of all nodes on Line (nested lines not included)
         """
-        from lineoptim.plot.accessor import VoltageAccessor
-        return VoltageAccessor(self, self.cores)
+        from lineoptim.plot.plotter import VoltagePlotter
+        return VoltagePlotter(self, self.cores)
 
     @property
     def current(self):
@@ -218,8 +218,8 @@ class Line:
         Conductor Current in Ampere. Loads that follow are summed up.
         :return: Current on conductor at each node on conductor (nested lines not included)
         """
-        from lineoptim.plot.accessor import CurrentAccessor
-        return CurrentAccessor(self, self.cores)
+        from lineoptim.plot.plotter import CurrentPlotter
+        return CurrentPlotter(self, self.cores)
 
     @property
     def current_sum(self):
@@ -227,8 +227,8 @@ class Line:
         Conductor Current in Ampere. Loads that follow are summed up.
         :return: Current on conductor at each node on conductor (nested lines not included)
         """
-        from lineoptim.plot.accessor import SumCurrentAccessor
-        return SumCurrentAccessor(self, self.cores)
+        from lineoptim.plot.plotter import SumCurrentPlotter
+        return SumCurrentPlotter(self, self.cores)
 
     @property
     def voltage_unbalance(self):
@@ -236,8 +236,8 @@ class Line:
         Voltage unbalance in % using NEMA definition
         :return: Voltage unbalance list of all nodes on Line (nested lines not included)
         """
-        from lineoptim.plot.accessor import VoltageUnbalanceAccessor
-        return VoltageUnbalanceAccessor(self, self.cores)
+        from lineoptim.plot.plotter import VoltageUnbalancePlotter
+        return VoltageUnbalancePlotter(self, self.cores)
 
     @property
     def current_unbalance(self):
@@ -245,8 +245,8 @@ class Line:
         Current unbalance in % using NEMA definition
         :return: Current unbalance list of all nodes on Line (nested lines not included)
         """
-        from lineoptim.plot.accessor import CurrentUnbalanceAccessor
-        return CurrentUnbalanceAccessor(self, self.cores)
+        from lineoptim.plot.plotter import CurrentUnbalancePlotter
+        return CurrentUnbalancePlotter(self, self.cores)
 
     @property
     def apparent_power(self):
@@ -254,8 +254,17 @@ class Line:
         Apparent power in VA
         :return: Apparent power list of all nodes on Line (nested lines not included)
         """
-        from lineoptim.plot.accessor import ApparentPowerAccessor
-        return ApparentPowerAccessor(self, self.cores)
+        from lineoptim.plot.plotter import ApparentPowerPlotter
+        return ApparentPowerPlotter(self, self.cores)
+
+    @property
+    def active_power(self):
+        """
+        Active power in W
+        :return: Active power list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.plotter import ActivePowerPlotter
+        return ActivePowerPlotter(self, self.cores)
 
     def recompute(self, iterations=2) -> None:
         """

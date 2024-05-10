@@ -5,7 +5,7 @@ from lineoptim.components import Line
 from lineoptim.components import get_current
 
 
-class BaseAccessor:
+class BasePlotter:
     def __init__(self, line: Line, cores: OrderedDict):
         self._line = line
         self._cores = cores
@@ -37,7 +37,7 @@ class BaseAccessor:
         self._line = line
 
 
-class VoltageAccessor(BaseAccessor):
+class VoltagePlotter(BasePlotter):
     def __init__(self, line: Line, cores: OrderedDict):
         super().__init__(line, cores)
 
@@ -121,7 +121,7 @@ class VoltageAccessor(BaseAccessor):
         return fig, ax
 
 
-class SumCurrentAccessor(BaseAccessor):
+class SumCurrentPlotter(BasePlotter):
     def __init__(self, line: Line, cores: OrderedDict):
         super().__init__(line, cores)
 
@@ -185,7 +185,7 @@ class SumCurrentAccessor(BaseAccessor):
         return fig, ax
 
 
-class CurrentAccessor(BaseAccessor):
+class CurrentPlotter(BasePlotter):
     def __init__(self, line: Line, cores: OrderedDict):
         super().__init__(line, cores)
 
@@ -269,7 +269,7 @@ class CurrentAccessor(BaseAccessor):
         return fig, ax
 
 
-class VoltageUnbalanceAccessor(BaseAccessor):
+class VoltageUnbalancePlotter(BasePlotter):
     def __init__(self, line: Line, cores: OrderedDict):
         super().__init__(line, cores)
 
@@ -339,7 +339,7 @@ class VoltageUnbalanceAccessor(BaseAccessor):
         return fig, ax
 
 
-class CurrentUnbalanceAccessor(BaseAccessor):
+class CurrentUnbalancePlotter(BasePlotter):
     def __init__(self, line: Line, cores: OrderedDict):
         super().__init__(line, cores)
 
@@ -410,7 +410,7 @@ class CurrentUnbalanceAccessor(BaseAccessor):
         return fig, ax
 
 
-class ApparentPowerAccessor(BaseAccessor):
+class ApparentPowerPlotter(BasePlotter):
     def __init__(self, line: Line, cores: OrderedDict):
         super().__init__(line, cores)
 
@@ -462,6 +462,65 @@ class ApparentPowerAccessor(BaseAccessor):
 
         ax.set_title('Apparent power curve')
         ax.set(xlabel='Loads', ylabel='Apparent power (VA)')
+        ax.set_xticks(position, x_ticks)
+        ax.legend(loc='upper right', ncol=3)
+        fig.show()
+
+        return fig, ax
+
+
+class ActivePowerPlotter(BasePlotter):
+    def __init__(self, line: Line, cores: OrderedDict):
+        super().__init__(line, cores)
+
+    def __repr__(self):
+        return repr(torch.tensor([load['active_power'] for load in self._line['loads']]))
+
+    def __getitem__(self, index):
+        try:
+            sel = self._line['loads'][index]
+            if isinstance(sel, dict):
+                return torch.tensor(sel['active_power'])
+            else:
+                return torch.tensor([load['active_power'] for load in sel])
+        except TypeError:
+            raise ValueError('Invalid index')
+
+    def min(self):
+        return torch.tensor([load['active_power'] for load in self._line['loads']]).min()
+
+    def max(self):
+        return torch.tensor([load['active_power'] for load in self._line['loads']]).max()
+
+    def mean(self):
+        return torch.tensor([load['active_power'] for load in self._line['loads']], dtype=torch.float).mean()
+
+    def std(self):
+        return torch.tensor([load['active_power'] for load in self._line['loads']], dtype=torch.float).std()
+
+    def plot(self, ax=None):
+        """
+        Plot active power curve
+        Pass fig and ax if you want to plot on existing figure
+        """
+        import matplotlib.pyplot as plt
+
+        plt.style.use('bmh')
+        fig = plt.figure()
+
+        if ax is None:
+            ax = fig.add_subplot(111)
+
+        position = [load['position'] for load in self._line['loads']]
+        x_ticks = [f'{load["name"]}\n{load["position"]}m' for load in self._line['loads']
+                   if 'position' in load.keys()]
+
+        active_power = [load['active_power'] for load in self._line['loads']]
+
+        ax.plot(position, active_power, marker='o', label='Active power', color='black')
+
+        ax.set_title('Active power curve')
+        ax.set(xlabel='Loads', ylabel='Active power (W)')
         ax.set_xticks(position, x_ticks)
         ax.legend(loc='upper right', ncol=3)
         fig.show()
