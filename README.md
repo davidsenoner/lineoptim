@@ -18,6 +18,9 @@ pip install lineoptim
 ```
 
 ## Usage
+
+Check examples folder for more examples.
+
 ```python
 import torch
 from collections import OrderedDict
@@ -45,30 +48,12 @@ if __name__ == '__main__':
     # add some loads on main line
     main_line.add("Load 1", 100, active_power=2000, v_nominal=v_nominal, power_factor=0.91)
     main_line.add("Load 9", 900, active_power=6000, v_nominal=v_nominal, power_factor=0.9)
-    main_line.add("Load 6", 600, active_power=20000, v_nominal=v_nominal, power_factor=0.91)
-    main_line.add("Load 10", 1000, active_power=20000, v_nominal=v_nominal, power_factor=0.87)
-    main_line.add("Load 2", 200, active_power=20000, v_nominal=v_nominal, power_factor=0.85)
-    main_line.add("Load 8", 800, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
-    main_line.add("Load 7", 700, active_power=30000, v_nominal=v_nominal, power_factor=0.9)
 
     # create a subline
     line = lo.Line('Sub-line 1', 300, v_nominal=v_nominal, resistivity=torch.tensor([0.2, 0.2, 0.2]), cores=cores)
     line.add("Load 1.1", 100, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
-    line.add("Load 1.2", 150, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
-    line.add("Load 1.3", 250, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
 
-    # create another subline
-    line1 = lo.Line('Sub-line 2', 200, v_nominal=v_nominal,
-                 resistivity=torch.tensor([0.45, 0.45, 0.45]), cores=cores)  # create line instance
-    line1.add("Load 2.3", 100, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
-    line1.add("Load 2.4", 150, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
-
-    line.add(**line1.dict())  # add line to main line
     main_line.add(**line.dict())  # add line to main line
-
-    # add some other loads on main line
-    main_line.add("Load 11", 400, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
-    main_line.add("Load 12", 500, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
 
     # compute load currents
     main_line.recompute()
