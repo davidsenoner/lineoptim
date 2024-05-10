@@ -14,7 +14,7 @@ def fetch_readme() -> str:
 
 setup(
     name='lineoptim',
-    version='1.1.1',
+    version='1.2.0',
     description='A line optimization package for electrical conductors.',
     author='David Senoner',
     author_email='david.senoner@gmail.com',
@@ -34,7 +34,8 @@ setup(
         "matplotlib",
         "numpy",
         "pandas",
-        "torch"
+        "torch",
+        "networkx"
     ],
     project_urls={
         "Github": "https://github.com/davidsenoner/lineoptim",

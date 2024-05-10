@@ -1,27 +1,3 @@
-# LineOptim - Electric Power Line Parameter Optimization
-
-[![PyPI version](https://badge.fury.io/py/lineoptim.svg)](https://badge.fury.io/py/lineoptim) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-**lineoptim** is an open-source package for electric power line simulation and optimization.
-It provides the tools for simulating, visualizing and optimizing electric power lines and is designed to scale with larger and nested networks.
-
-## Features
-
-- **Line Simulation**: Simulate electric power lines with multiple loads and sub-lines. Get voltage drop, current power at any point in the line.
-- **Optimization**: Optimize electric power lines for wanted voltage drop and optimal conductor size
-- **Visualization**: Visualize electric power lines and their parameters
-
-
-## Installation
-```bash
-pip install lineoptim
-```
-
-## Usage
-
-Check examples folder for more examples.
-
-```python
 import torch
 from collections import OrderedDict
 from matplotlib import pyplot as plt
@@ -48,12 +24,30 @@ if __name__ == '__main__':
     # add some loads on main line
     main_line.add("Load 1", 100, active_power=2000, v_nominal=v_nominal, power_factor=0.91)
     main_line.add("Load 9", 900, active_power=6000, v_nominal=v_nominal, power_factor=0.9)
+    main_line.add("Load 6", 600, active_power=20000, v_nominal=v_nominal, power_factor=0.91)
+    main_line.add("Load 10", 1000, active_power=20000, v_nominal=v_nominal, power_factor=0.87)
+    main_line.add("Load 2", 200, active_power=20000, v_nominal=v_nominal, power_factor=0.85)
+    main_line.add("Load 8", 800, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
+    main_line.add("Load 7", 700, active_power=30000, v_nominal=v_nominal, power_factor=0.9)
 
     # create a subline
     line = lo.Line('Sub-line 1', 300, v_nominal=v_nominal, resistivity=torch.tensor([0.2, 0.2, 0.2]), cores=cores)
     line.add("Load 1.1", 100, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
+    line.add("Load 1.2", 150, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
+    line.add("Load 1.3", 250, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
 
+    # create another subline
+    line1 = lo.Line('Sub-line 2', 200, v_nominal=v_nominal,
+                 resistivity=torch.tensor([0.45, 0.45, 0.45]), cores=cores)  # create line instance
+    line1.add("Load 2.3", 100, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
+    line1.add("Load 2.4", 150, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
+
+    line.add(**line1.dict())  # add line to main line
     main_line.add(**line.dict())  # add line to main line
+
+    # add some other loads on main line
+    main_line.add("Load 11", 400, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
+    main_line.add("Load 12", 500, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
 
     # compute load currents
     main_line.recompute()
@@ -93,11 +87,5 @@ if __name__ == '__main__':
     graph.plot()  # plot network graph
 
     main_line.save_to_json(LINE_CFG)  # save line configuration as json
-```
 
-## Contributing
-Contributions are welcome! For feature requests, bug reports or submitting pull requests, please use the [GitHub Issue Tracker](https://github.com/davidsenoner/lineoptim/issues).
-
-# License
-**lineoptim** is licensed under the open source [MIT Licence](https://github.com/davidsenoner/lineoptim/blob/main/LICENCE)
-
+    print("End.")

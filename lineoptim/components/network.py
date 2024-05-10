@@ -1,9 +1,8 @@
-import json
+import numpy as np
 import logging
 import torch
 from torch import nn
 from torch.optim import Adam
-from torch import tensor
 import matplotlib.pyplot as plt
 
 from lineoptim.components import Line, compute_partial_voltages
@@ -37,7 +36,7 @@ class NetworkOptimizer(nn.Module):
     def forward(self):
         self.line.set_resistivity_tensor(self.resistivity)  # update resistivity
 
-        compute_partial_voltages(self.line, iterations=5)
+        self.line.recompute()  # recompute partial voltages
 
         dux = self.line.get_residual_voltage_tensor()  # compute residual voltage
 
@@ -134,7 +133,9 @@ class Network:
         print(f'Resulting resistivity: {model.resistivity}')
 
         # plot the loss
-        plt.plot(losses)
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.show()
+        fig, ax = plt.subplots()
+        fig.suptitle('Optimization loss')
+        ax.plot(losses)
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Loss')
+        fig.show()

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import numpy as np
 import torch
 import json
@@ -105,15 +106,10 @@ def compute_partial_voltages(line, iterations: int = 2, **kwargs) -> None:
     :param line: line configuration
     :return: None
     """
-
-    # recompute partial voltages
     for _ in range(iterations):
         for node_id, load in enumerate(line['loads']):
-            drop_voltage = line['v_nominal'] - get_dUx(node_id=node_id, **line)
-            load["v_nominal"] = drop_voltage.detach()
-
-            if load.get('loads'):
-                compute_partial_voltages(load, iterations=iterations)
+            load["v_nominal"] = (line['v_nominal'] - get_dUx(node_id=node_id, **line)).detach()
+            compute_partial_voltages(load, iterations=iterations) if load.get('loads') else None
 
 
 class Line:
@@ -121,9 +117,10 @@ class Line:
             self,
             name,
             position,
+            cores: OrderedDict,
             resistivity=0,
             reactance=0,
-            v_nominal=400,
+            v_nominal: torch.Tensor = torch.tensor([400.0]),
             loads=None,
             **kwargs
     ):
@@ -139,6 +136,10 @@ class Line:
         if loads is None:
             loads = []
 
+            assert isinstance(cores, OrderedDict), "Cores must be an OrderedDict"
+            assert len(cores) > 0, "Cores must not be empty"
+            assert len(cores) == len(v_nominal), "Number of cores must match number of nominal voltages"
+
         # init params to dict
         self._dict = {
             'name': name,
@@ -148,7 +149,7 @@ class Line:
             'position': position,
             'loads': loads,
             'is_line': True,
-            'cores': len(v_nominal) if isinstance(v_nominal, list) or isinstance(v_nominal, torch.Tensor) else 1
+            'cores': cores
         }
         self._dict.update(kwargs)  # add additional parameters
         self._lines_to_optimize = []
@@ -194,6 +195,85 @@ class Line:
     def loads(self, value):
         self._dict['loads'] = value
 
+    @property
+    def cores(self) -> OrderedDict:
+        return self._dict['cores']
+
+    @cores.setter
+    def cores(self, value: OrderedDict):
+        self._dict['cores'] = value
+
+    @property
+    def voltage(self):
+        """
+        Voltage in Volt
+        :return: Voltage list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.plotter import VoltagePlotter
+        return VoltagePlotter(self, self.cores)
+
+    @property
+    def current(self):
+        """
+        Conductor Current in Ampere. Loads that follow are summed up.
+        :return: Current on conductor at each node on conductor (nested lines not included)
+        """
+        from lineoptim.plot.plotter import CurrentPlotter
+        return CurrentPlotter(self, self.cores)
+
+    @property
+    def current_sum(self):
+        """
+        Conductor Current in Ampere. Loads that follow are summed up.
+        :return: Current on conductor at each node on conductor (nested lines not included)
+        """
+        from lineoptim.plot.plotter import SumCurrentPlotter
+        return SumCurrentPlotter(self, self.cores)
+
+    @property
+    def voltage_unbalance(self):
+        """
+        Voltage unbalance in % using NEMA definition
+        :return: Voltage unbalance list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.plotter import VoltageUnbalancePlotter
+        return VoltageUnbalancePlotter(self, self.cores)
+
+    @property
+    def current_unbalance(self):
+        """
+        Current unbalance in % using NEMA definition
+        :return: Current unbalance list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.plotter import CurrentUnbalancePlotter
+        return CurrentUnbalancePlotter(self, self.cores)
+
+    @property
+    def apparent_power(self):
+        """
+        Apparent power in VA
+        :return: Apparent power list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.plotter import ApparentPowerPlotter
+        return ApparentPowerPlotter(self, self.cores)
+
+    @property
+    def active_power(self):
+        """
+        Active power in W
+        :return: Active power list of all nodes on Line (nested lines not included)
+        """
+        from lineoptim.plot.plotter import ActivePowerPlotter
+        return ActivePowerPlotter(self, self.cores)
+
+    def recompute(self, iterations=2) -> None:
+        """
+        Recompute partial voltages by taking all nodes and nested lines into account
+        :param iterations: Number of iterations, increase for more accurate results
+        :return: None
+        """
+        compute_partial_voltages(self, iterations=iterations)
+
     def get_resistivity_tensor(self) -> torch.Tensor:
         """
         Get resistivity tensor representing resistivity of each core for each load
@@ -234,22 +314,8 @@ class Line:
         lines = [line['v_nominal'] - get_dUx(**line)]
         for load in line['loads']:
             if load.get('is_line'):
-
-                sudx = self._get_lines_udx(load)
-                if len(sudx) > 0:
-                    for udx in sudx:
-                        lines.append(udx)
-
-        # stack lines if not empty
+                lines.extend(self._get_lines_udx(load))
         return lines
-
-    def cores_to_optimize(self):
-        """ Get number of cores to optimize """
-        return self.get_resistivity_tensor().shape[1]  # get number of cores
-
-    def loads_to_optimize(self):
-        """ Get number of loads to optimize """
-        return self.get_resistivity_tensor().shape[0]  # get number of loads
 
     def add(self, name: str, position: float, **kwargs) -> None:
         """
@@ -272,21 +338,12 @@ class Line:
         else:
             raise ValueError('No active power and power factor defined. Check your load definition.')
 
-        load['cores'] = load.get('cores', len(load['v_nominal']))  # add cores information
+        load['cores'] = load.get('cores', None)  # add cores information
         self._dict['loads'].append(load)
         self._dict['loads'] = sorted(self._dict['loads'], key=lambda x: x['position'])  # sort loads by position
 
         for idx, load in enumerate(self._dict['loads']):
             load['idx'] = idx  # add index to load
-
-    def get_current_by_idx(self, idx: int):
-        """
-        Calculate current by idx.
-        Note: Current corresponds to the current of selected node_id.
-        :param idx: Load index
-        :return: Current in Ampere
-        """
-        return get_current(self._dict['loads'][idx])
 
     def get_spot_current(self, idx=0):
         return sum(get_current(load) for load in self._dict['loads'][idx:])
