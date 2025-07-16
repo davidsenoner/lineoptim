@@ -2,122 +2,180 @@
 
 [![PyPI version](https://badge.fury.io/py/lineoptim.svg)](https://badge.fury.io/py/lineoptim) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**lineoptim** is an open-source package for electric power line simulation and optimization.
-It provides the tools for simulating, visualizing and optimizing electric power lines and is designed to scale with larger and nested networks.
+**LineOptim** is an open-source Python package for electric power line simulation and optimization.
+It provides comprehensive tools for simulating, visualizing, and optimizing electric power lines and is designed to scale with larger and nested networks.
 
 ## Features
 
-- **Line Simulation**: Simulate electric power lines with multiple loads and sub-lines. Get voltage drop, current power at any point in the line.
-- **Optimization**: Optimize electric power lines for wanted voltage drop and optimal conductor size
-- **Visualization**: Visualize electric power lines and their parameters
+- **Line Simulation**: Simulate electric power lines with multiple loads and sub-lines. Calculate voltage drop, current, and power at any point in the line.
+- **Optimization**: Optimize electric power lines for desired voltage drop and optimal conductor sizing.
+- **Visualization**: Visualize electric power lines and their parameters with comprehensive plotting capabilities.
+- **Nested Networks**: Support for complex, nested line configurations.
+- **PyTorch Integration**: Leverage PyTorch for efficient computations and automatic differentiation.
 
 
 ## Installation
+
+Install LineOptim using pip:
+
 ```bash
 pip install lineoptim
 ```
 
-## Usage
+## Quick Start
 
-Check examples folder for more examples.
+### Simple Example
+
+```python
+import lineoptim as lo
+
+# Create a three-phase distribution line
+line = lo.create_three_phase_line(
+    name="Distribution Line",
+    voltage=400.0,
+    resistivity=0.12
+)
+
+# Add loads using convenience functions
+lo.add_residential_load(line, "House 1", 100, 5.0)    # 5 kW at 100m
+lo.add_industrial_load(line, "Factory", 300, 25.0)    # 25 kW at 300m
+
+# Compute and analyze
+line.recompute()
+summary = lo.get_power_summary(line)
+print(f"Total power: {summary['total_active_power_kw']:.1f} kW")
+
+# Optimize if needed
+if lo.calculate_voltage_drop_percentage(line).max() > 3.0:
+    lo.optimize_line_simple(line, max_voltage_drop=3.0)
+```
+
+### Advanced Example
 
 ```python
 import torch
 from collections import OrderedDict
-from matplotlib import pyplot as plt
-
 import lineoptim as lo
 
-LINE_CFG = 'example_line.json'  # network configuration file
+# Define voltage and core configuration
+v_nominal = torch.tensor([400.0, 400.0, 400.0])  # Three-phase nominal voltage
+cores = OrderedDict({"L1": "brown", "L2": "black", "L3": "grey"})
 
-if __name__ == '__main__':
-    v_nominal = torch.tensor([400.0, 400.0, 400.0])  # nominal voltage
-    cores = OrderedDict({"L1": "brown", "L2": "black", "L3": "grey"})
+# Create main power line
+main_line = lo.Line(
+    name="Main power line",
+    position=0,
+    resistivity=torch.tensor([0.15, 0.251, 0.351]),  # Ohm/km per phase
+    reactance=torch.tensor([0.0, 0.0, 0.0]),
+    v_nominal=v_nominal,
+    cores=cores
+)
 
-    line_params = {
-        "name": "Main power line 1",
-        "position": 0,
-        "resistivity": torch.tensor([0.15, 0.251, 0.351]),  # resistivity,
-        "reactance": torch.tensor([0.0, 0.0, 0.0]),
-        "v_nominal": v_nominal,
-        "cores": cores
-    }
+# Add loads to the line
+main_line.add("Load 1", 100, active_power=2000, v_nominal=v_nominal, power_factor=0.91)
+main_line.add("Load 2", 500, active_power=5000, v_nominal=v_nominal, power_factor=0.85)
 
-    main_line = lo.Line(**line_params)  # create main line instance
+# Compute electrical parameters
+main_line.recompute()
 
-    # add some loads on main line
-    main_line.add("Load 1", 100, active_power=2000, v_nominal=v_nominal, power_factor=0.91)
-    main_line.add("Load 9", 900, active_power=6000, v_nominal=v_nominal, power_factor=0.9)
-    main_line.add("Load 6", 600, active_power=20000, v_nominal=v_nominal, power_factor=0.91)
-    main_line.add("Load 10", 1000, active_power=20000, v_nominal=v_nominal, power_factor=0.87)
-    main_line.add("Load 2", 200, active_power=20000, v_nominal=v_nominal, power_factor=0.85)
-    main_line.add("Load 8", 800, active_power=20000, v_nominal=v_nominal, power_factor=0.9)
-    main_line.add("Load 7", 700, active_power=30000, v_nominal=v_nominal, power_factor=0.9)
+# Access results
+print("Voltages:", main_line.voltage)
+print("Currents:", main_line.current)
+```
 
-    # create a subline
-    line = lo.Line('Sub-line 1', 300, v_nominal=v_nominal, resistivity=torch.tensor([0.2, 0.2, 0.2]), cores=cores)
-    line.add("Load 1.1", 100, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
-    line.add("Load 1.2", 150, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
-    line.add("Load 1.3", 250, active_power=20000, v_nominal=v_nominal, power_factor=0.8)
+## Advanced Usage
 
-    # create another subline
-    line1 = lo.Line('Sub-line 2', 200, v_nominal=v_nominal,
-                 resistivity=torch.tensor([0.45, 0.45, 0.45]), cores=cores)  # create line instance
-    line1.add("Load 2.3", 100, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
-    line1.add("Load 2.4", 150, active_power=2000, v_nominal=v_nominal, power_factor=0.9)
+### High-Level API
 
-    line.add(**line1.dict())  # add line to main line
-    main_line.add(**line.dict())  # add line to main line
+LineOptim provides high-level convenience functions for common use cases:
 
-    # add some other loads on main line
-    main_line.add("Load 11", 400, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
-    main_line.add("Load 12", 500, active_power=10000, v_nominal=v_nominal, power_factor=0.9)
+```python
+import lineoptim as lo
 
-    # compute load currents
-    main_line.recompute()
+# Create lines with convenience functions
+line = lo.create_three_phase_line("Main Line", voltage=400.0, resistivity=0.12)
+single_phase = lo.create_single_phase_line("Service Line", voltage=230.0)
 
-    # print some results
-    print("Voltages on L1, L2, L3: \n", main_line.voltage)
-    print("Voltage of specific load (3. load): \n", main_line.voltage[2])
-    print("Currents on L1, L2, L3: \n", main_line.current)
-    print("Current of specific loads (first 5 loads): \n", main_line.current[0:5])
+# Add loads with convenience functions
+lo.add_residential_load(line, "House 1", 100, 5.0)  # 5 kW at 100m
+lo.add_industrial_load(line, "Factory", 300, 50.0)  # 50 kW at 300m
 
-    def plot_results(plot_line, title):
-        # plot some results
-        plt.style.use('bmh')
-        fig, ax = plt.subplots(2, 2, figsize=(12, 8))
-        fig.suptitle(title)
+# Analyze the network
+line.recompute()
+summary = lo.get_power_summary(line)
+voltage_drop = lo.calculate_voltage_drop_percentage(line)
 
-        # Adjust the spacing between the subplots
-        plt.subplots_adjust(hspace=0.3)
+# Simple optimization
+results = lo.optimize_line_simple(line, max_voltage_drop=3.0)
+```
 
-        plot_line.voltage.plot(ax=ax[0, 0])
-        plot_line.current.plot(ax=ax[0, 1])
-        plot_line.current_sum.plot(ax=ax[1, 0])
-        plot_line.voltage_unbalance.plot(ax=ax[1, 1])
+### Network Optimization
 
-        fig.show()
+```python
+# Create network and optimize conductor sizing
+network = lo.Network()
+network.add(main_line)
+network.optimize(epochs=200, lr=0.01, max_v_drop=5.0)
+```
 
-    plot_results(main_line, "Main line before optimization")
+### Visualization
 
-    # optimize conductor resistivity
-    network = lo.Network()  # create network instance
-    network.add(main_line)  # add main line to network
-    network.optimize(epochs=200, lr=0.01, max_v_drop=5.0)  # optimize network
+```python
+# Plot voltage and current curves
+fig, ax = main_line.voltage.plot()
+fig, ax = main_line.current.plot()
 
-    plot_results(main_line, "Main line after optimization")
+# Plot network graph
+graph = lo.PlotGraph(main_line)
+graph.plot()
+graph.save('network_graph.pdf')
+```
 
-    graph = lo.PlotGraph(main_line)
-    graph.plot()  # plot network graph
+### Working with Nested Lines
 
-    main_line.save_to_json(LINE_CFG)  # save line configuration as json
+```python
+# Create sub-lines
+sub_line = lo.create_three_phase_line("Sub-line", voltage=400.0, resistivity=0.2)
+lo.add_residential_load(sub_line, "Load 1.1", 50, 3.0)
+lo.add_residential_load(sub_line, "Load 1.2", 100, 4.0)
 
-    print("End.")
+# Add sub-line to main line
+main_line.add(**sub_line.dict())
 ```
 
 ## Contributing
-Contributions are welcome! For feature requests, bug reports or submitting pull requests, please use the [GitHub Issue Tracker](https://github.com/davidsenoner/lineoptim/issues).
 
-# License
-**lineoptim** is licensed under the open source [MIT Licence](https://github.com/davidsenoner/lineoptim/blob/main/LICENCE)
+Contributions are welcome! Please follow these guidelines:
+
+1. **Bug Reports**: Use the [GitHub Issue Tracker](https://github.com/davidsenoner/lineoptim/issues) to report bugs.
+2. **Feature Requests**: Submit feature requests via GitHub Issues.
+3. **Pull Requests**: Fork the repository and submit pull requests for improvements.
+4. **Code Style**: Follow PEP 8 and include appropriate tests.
+
+## Development
+
+To set up the development environment:
+
+```bash
+git clone https://github.com/davidsenoner/lineoptim.git
+cd lineoptim
+pip install -e .
+```
+
+## License
+
+**LineOptim** is licensed under the [MIT License](https://github.com/davidsenoner/lineoptim/blob/main/LICENCE).
+
+## Citation
+
+If you use LineOptim in your research, please cite:
+
+```bibtex
+@software{lineoptim,
+  title={LineOptim: Electric Power Line Parameter Optimization},
+  author={David Senoner},
+  url={https://github.com/davidsenoner/lineoptim},
+  year={2024}
+}
+```
 

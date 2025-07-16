@@ -1,0 +1,291 @@
+{
+    "name": "Main power line 1",
+    "resistivity": [
+        0.10662711411714554,
+        0.10663092136383057,
+        0.1066344752907753
+    ],
+    "reactance": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "v_nominal": [
+        400.0,
+        400.0,
+        400.0
+    ],
+    "position": 0,
+    "loads": [
+        {
+            "name": "Load 1",
+            "position": 100,
+            "active_power": 2000,
+            "v_nominal": [
+                399.965576171875,
+                399.965576171875,
+                399.965576171875
+            ],
+            "power_factor": 0.91,
+            "apparent_power": 2197.802197802198,
+            "is_line": false,
+            "cores": null,
+            "idx": 0
+        },
+        {
+            "name": "Load 2",
+            "position": 200,
+            "active_power": 20000,
+            "v_nominal": [
+                399.20263671875,
+                399.2026062011719,
+                399.20257568359375
+            ],
+            "power_factor": 0.85,
+            "apparent_power": 23529.411764705885,
+            "is_line": false,
+            "cores": null,
+            "idx": 1
+        },
+        {
+            "name": "Sub-line 1",
+            "position": 300,
+            "resistivity": [
+                0.6928848028182983,
+                0.692855715751648,
+                0.6929222941398621
+            ],
+            "reactance": 0,
+            "v_nominal": [
+                395.15704345703125,
+                395.1568908691406,
+                395.15667724609375
+            ],
+            "loads": [
+                {
+                    "name": "Load 1.1",
+                    "position": 100,
+                    "active_power": 20000,
+                    "v_nominal": [
+                        392.3619384765625,
+                        392.3619079589844,
+                        392.3614196777344
+                    ],
+                    "power_factor": 0.8,
+                    "apparent_power": 25000.0,
+                    "is_line": false,
+                    "cores": null,
+                    "idx": 0
+                },
+                {
+                    "name": "Load 1.2",
+                    "position": 150,
+                    "active_power": 20000,
+                    "v_nominal": [
+                        388.12353515625,
+                        388.1236572265625,
+                        388.1227722167969
+                    ],
+                    "power_factor": 0.8,
+                    "apparent_power": 25000.0,
+                    "is_line": false,
+                    "cores": null,
+                    "idx": 1
+                },
+                {
+                    "name": "Sub-line 2",
+                    "position": 200,
+                    "resistivity": [
+                        2.0807507038116455,
+                        2.180452585220337,
+                        2.347294569015503
+                    ],
+                    "reactance": 0,
+                    "v_nominal": [
+                        387.2127380371094,
+                        387.212890625,
+                        387.2119140625
+                    ],
+                    "loads": [
+                        {
+                            "name": "Load 2.3",
+                            "position": 100,
+                            "active_power": 2000,
+                            "v_nominal": [
+                                386.5094909667969,
+                                386.4758605957031,
+                                386.4183044433594
+                            ],
+                            "power_factor": 0.9,
+                            "apparent_power": 2222.222222222222,
+                            "is_line": false,
+                            "cores": null,
+                            "idx": 0
+                        },
+                        {
+                            "name": "Load 2.4",
+                            "position": 150,
+                            "active_power": 2000,
+                            "v_nominal": [
+                                385.4516906738281,
+                                385.36712646484375,
+                                385.22418212890625
+                            ],
+                            "power_factor": 0.9,
+                            "apparent_power": 2222.222222222222,
+                            "is_line": false,
+                            "cores": null,
+                            "idx": 1
+                        }
+                    ],
+                    "is_line": true,
+                    "cores": {
+                        "L1": "brown",
+                        "L2": "black",
+                        "L3": "grey"
+                    },
+                    "active_power": 4000,
+                    "apparent_power": 4444.444444444444,
+                    "power_factor": 0.9,
+                    "idx": 2
+                },
+                {
+                    "name": "Load 1.3",
+                    "position": 250,
+                    "active_power": 20000,
+                    "v_nominal": [
+                        379.9993896484375,
+                        379.9998474121094,
+                        379.9981994628906
+                    ],
+                    "power_factor": 0.8,
+                    "apparent_power": 25000.0,
+                    "is_line": false,
+                    "cores": null,
+                    "idx": 3
+                }
+            ],
+            "is_line": true,
+            "cores": {
+                "L1": "brown",
+                "L2": "black",
+                "L3": "grey"
+            },
+            "active_power": 64000,
+            "apparent_power": 79444.44444444444,
+            "power_factor": 0.8055944055944056,
+            "idx": 2
+        },
+        {
+            "name": "Load 11",
+            "position": 400,
+            "active_power": 10000,
+            "v_nominal": [
+                394.4640197753906,
+                394.4638366699219,
+                394.463623046875
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 11111.111111111111,
+            "is_line": false,
+            "cores": null,
+            "idx": 3
+        },
+        {
+            "name": "Load 12",
+            "position": 500,
+            "active_power": 10000,
+            "v_nominal": [
+                393.5909118652344,
+                393.5907287597656,
+                393.5904541015625
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 11111.111111111111,
+            "is_line": false,
+            "cores": null,
+            "idx": 4
+        },
+        {
+            "name": "Load 6",
+            "position": 600,
+            "active_power": 20000,
+            "v_nominal": [
+                391.5125732421875,
+                391.5123291015625,
+                391.511962890625
+            ],
+            "power_factor": 0.91,
+            "apparent_power": 21978.021978021978,
+            "is_line": false,
+            "cores": null,
+            "idx": 5
+        },
+        {
+            "name": "Load 7",
+            "position": 700,
+            "active_power": 30000,
+            "v_nominal": [
+                387.7456359863281,
+                387.7452392578125,
+                387.7447509765625
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 33333.333333333336,
+            "is_line": false,
+            "cores": null,
+            "idx": 6
+        },
+        {
+            "name": "Load 8",
+            "position": 800,
+            "active_power": 20000,
+            "v_nominal": [
+                384.8474426269531,
+                384.8469543457031,
+                384.8463134765625
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 22222.222222222223,
+            "is_line": false,
+            "cores": null,
+            "idx": 7
+        },
+        {
+            "name": "Load 9",
+            "position": 900,
+            "active_power": 6000,
+            "v_nominal": [
+                383.8661193847656,
+                383.8656005859375,
+                383.86492919921875
+            ],
+            "power_factor": 0.9,
+            "apparent_power": 6666.666666666666,
+            "is_line": false,
+            "cores": null,
+            "idx": 8
+        },
+        {
+            "name": "Load 10",
+            "position": 1000,
+            "active_power": 20000,
+            "v_nominal": [
+                379.9998474121094,
+                379.99920654296875,
+                379.9983825683594
+            ],
+            "power_factor": 0.87,
+            "apparent_power": 22988.505747126437,
+            "is_line": false,
+            "cores": null,
+            "idx": 9
+        }
+    ],
+    "is_line": true,
+    "cores": {
+        "L1": "brown",
+        "L2": "black",
+        "L3": "grey"
+    }
+}
