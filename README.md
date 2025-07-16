@@ -24,6 +24,34 @@ pip install lineoptim
 
 ## Quick Start
 
+### Simple Example
+
+```python
+import lineoptim as lo
+
+# Create a three-phase distribution line
+line = lo.create_three_phase_line(
+    name="Distribution Line",
+    voltage=400.0,
+    resistivity=0.12
+)
+
+# Add loads using convenience functions
+lo.add_residential_load(line, "House 1", 100, 5.0)    # 5 kW at 100m
+lo.add_industrial_load(line, "Factory", 300, 25.0)    # 25 kW at 300m
+
+# Compute and analyze
+line.recompute()
+summary = lo.get_power_summary(line)
+print(f"Total power: {summary['total_active_power_kw']:.1f} kW")
+
+# Optimize if needed
+if lo.calculate_voltage_drop_percentage(line).max() > 3.0:
+    lo.optimize_line_simple(line, max_voltage_drop=3.0)
+```
+
+### Advanced Example
+
 ```python
 import torch
 from collections import OrderedDict
@@ -57,6 +85,30 @@ print("Currents:", main_line.current)
 
 ## Advanced Usage
 
+### High-Level API
+
+LineOptim provides high-level convenience functions for common use cases:
+
+```python
+import lineoptim as lo
+
+# Create lines with convenience functions
+line = lo.create_three_phase_line("Main Line", voltage=400.0, resistivity=0.12)
+single_phase = lo.create_single_phase_line("Service Line", voltage=230.0)
+
+# Add loads with convenience functions
+lo.add_residential_load(line, "House 1", 100, 5.0)  # 5 kW at 100m
+lo.add_industrial_load(line, "Factory", 300, 50.0)  # 50 kW at 300m
+
+# Analyze the network
+line.recompute()
+summary = lo.get_power_summary(line)
+voltage_drop = lo.calculate_voltage_drop_percentage(line)
+
+# Simple optimization
+results = lo.optimize_line_simple(line, max_voltage_drop=3.0)
+```
+
 ### Network Optimization
 
 ```python
@@ -69,16 +121,27 @@ network.optimize(epochs=200, lr=0.01, max_v_drop=5.0)
 ### Visualization
 
 ```python
+# Plot voltage and current curves
+fig, ax = main_line.voltage.plot()
+fig, ax = main_line.current.plot()
+
 # Plot network graph
 graph = lo.PlotGraph(main_line)
 graph.plot()
-
-# Plot voltage and current curves
-main_line.voltage.plot()
-main_line.current.plot()
+graph.save('network_graph.pdf')
 ```
 
-For more detailed examples, check the `examples/` directory.
+### Working with Nested Lines
+
+```python
+# Create sub-lines
+sub_line = lo.create_three_phase_line("Sub-line", voltage=400.0, resistivity=0.2)
+lo.add_residential_load(sub_line, "Load 1.1", 50, 3.0)
+lo.add_residential_load(sub_line, "Load 1.2", 100, 4.0)
+
+# Add sub-line to main line
+main_line.add(**sub_line.dict())
+```
 
 ## Contributing
 

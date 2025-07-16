@@ -23,6 +23,18 @@ from lineoptim.components.line import (
     list_to_tensor
 )
 
+# High-level utilities
+from lineoptim.utils import (
+    create_three_phase_line,
+    create_single_phase_line,
+    add_residential_load,
+    add_industrial_load,
+    calculate_voltage_drop_percentage,
+    get_power_summary,
+    optimize_line_simple,
+    create_example_network
+)
+
 __all__ = [
     # Core classes
     "Line",
@@ -39,6 +51,16 @@ __all__ = [
     "calc_power_factor",
     "tensor_to_list",
     "list_to_tensor",
+    
+    # High-level utilities
+    "create_three_phase_line",
+    "create_single_phase_line",
+    "add_residential_load",
+    "add_industrial_load",
+    "calculate_voltage_drop_percentage",
+    "get_power_summary",
+    "optimize_line_simple",
+    "create_example_network",
     
     # Metadata
     "__version__",
